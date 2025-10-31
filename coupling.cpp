@@ -198,8 +198,6 @@ namespace steel {
 
 #pragma region liquid_sodium_properties
 
-#pragma region liquid_sodium_properties
-
 /**
  * @brief Provides thermophysical properties for Liquid Sodium (Na).
  *
@@ -668,15 +666,13 @@ int main() {
     std::vector<double> q_x_v_wick(N, 0.0);      // Heat flux across wick-vapor interface (directed to vapor)
     std::vector<double> q_x_v_vapor(N, 0.0);     // Heat flux across wick-vapor interface (directed to vapor)
 
-    // Evaporation mass flux at the wick-vapor interface [kg/m2/s]
-    std::vector<double> m_dot_x_v(N, 0.0);
-
     // Models
     const int rhie_chow_on_off_x = 1;                 // 0: no RC correction, 1: with RC correction
     const int rhie_chow_on_off_v = 1;                 // 0: no RC correction, 1: with RC correction
     const int SST_model_turbulence_on_off = 0;        // 0: no turbulence, 1: with turbulence
 
-    std::vector<double> Gamma_xg_new(N, 0.0);
+    std::vector<double> Gamma_xg_new(N, 0.0);       // Mass transfer rate [kg / (m^3 s)]
+    std::vector<double> m_dot_x_v(N, 0.0);          // Evaporation mass flux at the wick-vapor interface [kg/m2/s]
 
     // The coefficient bVU is needed in momentum predictor loop and pressure correction to estimate the velocities aVT the faces using the Rhie and Chow correction
     std::vector<double> aVU(N, 0.0), bVU(N, 2 * (4.0 / 3.0 * vapor_sodium::mu(T_init) / dz) + dz / dt * rho_v[0]), cVU(N, 0.0), dVU(N, 0.0);
@@ -698,11 +694,11 @@ int main() {
 
         // =======================================================================
         //
-        //                        [1. SOLVE WALL TEMPERATURE]
+        //                           [1. SOLVE WALL]
         //
         // =======================================================================
 
-        #pragma region wall_conduction
+        #pragma region wall
 
         // Initialization of the coefficients for tridiagonal solver
         std::vector<double> aTW(N, 0.0), bTW(N, 0.0), cTW(N, 0.0), dTW(N, 0.0);
@@ -739,9 +735,11 @@ int main() {
 
         // =======================================================================
         //
-        //                   [2. SOLVE WICK CONDUCTION/CONVECTION]
+        //                           [2. SOLVE WICK]
         //
         // =======================================================================
+
+        #pragma region wick
 
         const double max_abs_u =
             std::abs(*std::max_element(u_x.begin(), u_x.end(),
@@ -760,6 +758,9 @@ int main() {
         // PISO iterations
         int iter = 0;
         double maxErr = 1.0;
+
+        // Pressure coupling: the meniscus in the last cell of the domain is considered flat, so the pressure of the wick is equal to the pressure of the vapor
+        p_outlet_x = p_v[N - 1];
 
         while (iter < tot_x_iter && maxErr > tol_x) {
 
@@ -800,7 +801,7 @@ int main() {
                 aXU[i] = -std::max(F_l, 0.0) - D_l;
                 cXU[i] = std::max(-F_r, 0.0) - D_r;
                 bXU[i] = (std::max(F_r, 0.0) - std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + mu_P / K * dz + CF * mu_P * dz / sqrt(K) * abs(u_x[i]);
-                dXU[i] = -0.5 * (p_x[i + 1] - p_x[i - 1]) + rho_P * u_x[i] * dz / dt + Su[i] * dz;
+                dXU[i] = -0.5 * (p_x[i + 1] - p_x[i - 1]) + rho_P * u_x[i] * dz / dt /* + Su_x[i] * dz */;
             }
 
             // Velocity BC: Dirichlet at l, dirichlet at r
@@ -855,7 +856,7 @@ int main() {
                     aXP[i] = -E_l;
                     cXP[i] = -E_r;
                     bXP[i] = E_l + E_r;          // No compressibility term
-                    dXP[i] = Sm[i] * dz - mass_imbalance;
+                    dXP[i] = - Gamma_xg_new[i] * dz - mass_imbalance;
                 }
 
                 // BCs for p': zero gradient aVT inlet and zero correction aVT outlet
@@ -960,11 +961,19 @@ int main() {
             const double C_l = (Fl * cp_l);
             const double C_r = (Fr * cp_r);
 
+            // Volumetric heat source due to heat flux at the wall-wick interface [W/m^3]
+            double volum_heat_source_w_x = q_w_x_wick[i] * 2 * r_interface / (r_interface * r_interface - r_inner * r_inner);
+
+            // Volumetric heat source due to heat flux at the wick-vapor interface [W/m^3]
+            double volum_heat_source_x_v = q_x_v_wick[i] * 2 * r_inner / (r_interface * r_interface - r_inner * r_inner);
+
             aXT[i] = -D_l - std::max(C_l, 0.0);
             cXT[i] = -D_r + std::max(-C_r, 0.0);
             bXT[i] = (std::max(C_r, 0.0) - std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
 
-            dXT[i] = rhoCp_dzdt * T_old_x[i] + St[i] * dz;
+            dXT[i] = rhoCp_dzdt * T_old_x[i] + 
+                volum_heat_source_w_x * dz -
+                volum_heat_source_x_v * dz;
         }
 
         // Temperature BCs
@@ -975,9 +984,11 @@ int main() {
 
         #pragma endregion
 
+        # pragma endregion
+
         // =======================================================================
         //
-        //               [0. SOLVE PARABOLIC DISTRIBUTION IN WALL AND WICK]
+        //                   [3. SOLVE INTERFACES AND FLUXES]
         //
         // =======================================================================
 
@@ -1107,11 +1118,11 @@ int main() {
 
         // =======================================================================
         //
-        //                   [3. SOLVE VAPOR CONDUCTION/CONVECTION]
+        //                           [4. SOLVE VAPOR]
         //
         // =======================================================================
 
-        #pragma region vapor_conduction_convection
+        #pragma region vapor
 
         const double max_u = *std::max_element(u_v.begin(), u_v.end());
         const double max_rho = *std::max_element(rho_v.begin(), rho_v.end());
@@ -1129,6 +1140,9 @@ int main() {
         // PISO iterations
         double maxErr = 1.0;
         int iter = 0;
+
+        // Wick vapor coupling: the pressure in the last cell of the domain is considered the saturation pressure at the temperature of the interface
+        p_outlet_v = vapor_sodium::P_sat(T_x_v[N - 1]);
 
         while (iter < tot_v_iter && maxErr > tol_v) {
 
@@ -1176,7 +1190,7 @@ int main() {
                 aVU[i] = -std::max(F_l, 0.0) - D_l;
                 cVU[i] = std::max(-F_r, 0.0) - D_r;
                 bVU[i] = (std::max(F_r, 0.0) - std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F;
-                dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt + Su[i] * dz;
+                dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt /* + Su[i] * dz */;
 
                 printf("");
             }
@@ -1235,7 +1249,7 @@ int main() {
                     aP[i] = -E_l;
                     cP[i] = -E_r;
                     bP[i] = E_l + E_r + psi_i * dz / dt;
-                    dP[i] = Sm[i] * dz - mass_imbalance;
+                    dP[i] = +Gamma_xg_new[i] * dz - mass_imbalance;
 
                     printf("");
                 }
@@ -1264,7 +1278,7 @@ int main() {
                 }
 
                 p_storage_v[0] = p_storage_v[1];
-                p_storage[N + 1] = p_storage_v;
+                p_storage_v[N + 1] = p_storage_v[N];
 
                 #pragma endregion
 
@@ -1296,8 +1310,6 @@ int main() {
 
             iter++;
         }
-
-        #pragma endregion
 
         // =======================================================================
         //
@@ -1435,12 +1447,15 @@ int main() {
             const double C_l = (Fl * cp_l);
             const double C_r = (Fr * cp_r);
 
+            // Volumetric heat source due to heat flux at the wick-vapor interface, positive if heat is flowing into the vapor
+            double volum_heat_source_x_v = 2 * q_x_v_vapor[i] / r_inner;
+
             aVT[i] = -D_l - std::max(C_l, 0.0);
             cVT[i] = -D_r + std::max(-C_r, 0.0);
             bVT[i] = (std::max(C_r, 0.0) - std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
 
             const double pressure_work = (p_v[i] - p_old_v[i]) / dt;
-            dVT[i] = rhoCp_dzdt * T_old_v[i] + pressure_work * dz + St[i] * dz;
+            dVT[i] = rhoCp_dzdt * T_old_v[i] + pressure_work * dz + volum_heat_source_x_v * dz;
 
         }
 
@@ -1455,9 +1470,11 @@ int main() {
 
         #pragma endregion
 
+        #pragma endregion
+
         // =======================================================================
         //
-        //                               [4. OUTPUT]
+        //                             [5. OUTPUT]
         //
         // =======================================================================
 
@@ -1560,7 +1577,7 @@ int main() {
             } fout << "\n\n";
         }*/
 
-#pragma endregion
+        #pragma endregion
     }
 
     return 0;
