@@ -815,8 +815,8 @@ int main() {
                 const double F_r = rho_r * u_r_face;
 
                 aXU[i] = -std::max(F_l, 0.0) - D_l;
-                cXU[i] = std::max(-F_r, 0.0) - D_r;
-                bXU[i] = (std::max(F_r, 0.0) - std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + mu_P / K * dz + CF * mu_P * dz / sqrt(K) * abs(u_x[i]);
+                cXU[i] = -std::max(-F_r, 0.0) - D_r;
+                bXU[i] = (std::max(F_r, 0.0) + std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + mu_P / K * dz + CF * mu_P * dz / sqrt(K) * abs(u_x[i]);
                 dXU[i] = -0.5 * (p_x[i + 1] - p_x[i - 1]) + rho_P * u_x[i] * dz / dt /* + Su_x[i] * dz */;
             }
 
@@ -988,8 +988,8 @@ int main() {
             double volum_heat_source_x_v = q_x_v_wick[i] * 2 * r_inner / (r_interface * r_interface - r_inner * r_inner);
 
             aXT[i] = -D_l - std::max(C_l, 0.0);
-            cXT[i] = -D_r + std::max(-C_r, 0.0);
-            bXT[i] = (std::max(C_r, 0.0) - std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
+            cXT[i] = -D_r - std::max(-C_r, 0.0);
+            bXT[i] = (std::max(C_r, 0.0) + std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
 
             dXT[i] = rhoCp_dzdt * T_old_x[i] + 
                 volum_heat_source_w_x * dz -
@@ -1210,8 +1210,8 @@ int main() {
                 const double F = 0.25 * f * rho_P * std::abs(u_v[i]) / r_inner;
 
                 aVU[i] = -std::max(F_l, 0.0) - D_l;
-                cVU[i] = std::max(-F_r, 0.0) - D_r;
-                bVU[i] = (std::max(F_r, 0.0) - std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F;
+                cVU[i] = -std::max(-F_r, 0.0) - D_r;
+                bVU[i] = (std::max(F_r, 0.0) + std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F;
                 dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt /* + Su[i] * dz */;
 
                 printf("");
@@ -1509,8 +1509,8 @@ int main() {
             double volum_heat_source_x_v = 2 * q_x_v_vapor[i] / r_inner;
 
             aVT[i] = -D_l - std::max(C_l, 0.0);
-            cVT[i] = -D_r + std::max(-C_r, 0.0);
-            bVT[i] = (std::max(C_r, 0.0) - std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
+            cVT[i] = -D_r - std::max(-C_r, 0.0);
+            bVT[i] = (std::max(C_r, 0.0) + std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;
 
             const double pressure_work = (p_v[i] - p_old_v[i]) / dt;
             dVT[i] = rhoCp_dzdt * T_old_v[i] + pressure_work * dz + volum_heat_source_x_v * dz;
