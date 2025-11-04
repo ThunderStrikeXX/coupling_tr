@@ -11,142 +11,6 @@
 
 // =======================================================================
 //
-//                        [SOLVING ALGORITHMS]
-//
-// =======================================================================
-
-#pragma region solving_algorithms
-/**
- * @brief Solves a tridiagonal system of linear equations A*x = d using the Thomas Algorithm (TDMA).
- *
- * This function efficiently solves a system where the coefficient matrix A is tridiagonal,
- * meaning it only has non-zero elements on the main diagonal, the sub-diagonal, and the super-diagonal.
- * The system is defined by:
- * - 'a': The sub-diagonal (below the main diagonal). a[0] is typically unused.
- * - 'b': The main diagonal.
- * - 'c': The super-diagonal (above the main diagonal). c[N-1] is typically unused.
- * - 'd': The right-hand side vector.
- *
- * The method consists of two main phases: forward elimination and back substitution,
- * which is optimized for the sparse tridiagonal structure.
- *
- * @param a The sub-diagonal vector (size N, with a[0] often being zero/unused).
- * @param b The main diagonal vector (size N). Must contain non-zero elements.
- * @param c The super-diagonal vector (size N, with c[N-1] often being zero/unused).
- * @param d The right-hand side vector (size N).
- * @return std::vector<double> The solution vector 'x' (size N).
- * * @note This implementation assumes the system is diagonally dominant or otherwise
- * stable, as it does not include pivoting. The vectors 'a', 'b', 'c', and 'd' must
- * all have the same size N, corresponding to the size of the system.
- */
-std::vector<double> solveTridiagonal(const std::vector<double>& a,
-    const std::vector<double>& b,
-    const std::vector<double>& c,
-    const std::vector<double>& d) {
-
-    int n = b.size();
-    std::vector<double> c_star(n, 0.0);
-    std::vector<double> d_star(n, 0.0);
-    std::vector<double> x(n, 0.0);
-
-    c_star[0] = c[0] / b[0];
-    d_star[0] = d[0] / b[0];
-
-    for (int i = 1; i < n; i++) {
-
-        double m = b[i] - a[i] * c_star[i - 1];
-        c_star[i] = c[i] / m;
-        d_star[i] = (d[i] - a[i] * d_star[i - 1]) / m;
-    }
-
-    x[n - 1] = d_star[n - 1];
-
-    for (int i = n - 2; i >= 0; i--)
-        x[i] = d_star[i] - c_star[i] * x[i + 1];
-
-    return x;
-}
-
-using Vec6 = std::array<double, 6>;
-using Mat6x6 = std::array<std::array<double, 6>, 6>;
-
-/**
- * @brief Solves a 6x6 system of linear equations A*x = b using Gaussian elimination.
- *
- * This function applies Gaussian elimination with partial pivoting to transform the
- * augmented matrix [A|b] into an upper triangular form. It then solves for the
- * unknown vector 'x' using back substitution. The function works only for 6x6
- * systems due to its fixed size implementation.
- *
- * @param A The 6x6 coefficient matrix. This matrix is modified in-place
- * (transformed into an upper triangular matrix).
- * @param b The 6-element right-hand side vector. This vector is also modified
- * in-place to reflect the operations on A.
- * @return Vec6 The solution vector 'x' for the system A*x = b.
- * @throws std::runtime_error If the matrix A is singular (or near-singular,
- * meaning a pivot element is zero), preventing a unique solution.
- *
- * @note This implementation uses **partial pivoting** to ensure numerical stability
- * by selecting the largest absolute element in the current column below the
- * pivot as the pivot element.
- */
-static Vec6 solve6(Mat6x6 A, Vec6 b) {
-
-    const int N = 6;
-
-    for (int k = 0; k < N; ++k) {
-
-        int piv = k;
-        double mx = std::abs(A[k][k]);
-
-        for (int i = k + 1; i < N; ++i) {
-            double v = std::abs(A[i][k]);
-            if (v > mx) { mx = v; piv = i; }
-        }
-
-        if (mx == 0.0) { throw std::runtime_error("Singular matrix"); }
-
-        if (piv != k) {
-            std::swap(A[piv], A[k]);
-            std::swap(b[piv], b[k]);
-        }
-
-        double diag = A[k][k];
-
-        for (int j = k; j < N; ++j) A[k][j] /= diag;
-
-        b[k] /= diag;
-
-        for (int i = k + 1; i < N; ++i) {
-            double f = A[i][k];
-            if (f == 0.0) continue;
-            for (int j = k; j < N; ++j) A[i][j] -= f * A[k][j];
-            b[i] -= f * b[k];
-        }
-    }
-
-    Vec6 x{};
-    for (int i = N - 1; i >= 0; --i) {
-        double s = b[i];
-        for (int j = i + 1; j < N; ++j) s -= A[i][j] * x[j];
-        x[i] = s;
-    }
-
-    return x;
-}
-
-// Initializes vector with equally spaced values between min and max
-std::vector<double> linspace(double T_min, double T_max, int N) {
-    std::vector<double> T(N);
-    double dT = (T_max - T_min) / (N - 1);
-    for (int i = 0; i < N; i++) T[i] = T_min + i * dT;
-    return T;
-}
-
-#pragma endregion
-
-// =======================================================================
-//
 //                       [MATERIAL PROPERTIES]
 //
 // =======================================================================
@@ -154,26 +18,29 @@ std::vector<double> linspace(double T_min, double T_max, int N) {
 #pragma region steel_properties
 
 /**
- * @brief Provides material properties for a specific type of steel.
+ * @brief Provides material properties for steel.
  *
- * This namespace contains constant lookup tables and helper functions to retrieve
+ * This namespace contains lookup tables and helper functions to retrieve
  * temperature-dependent thermodynamic properties of steel, specifically:
  * - Specific Heat Capacity (Cp)
  * - Density (rho)
  * - Thermal Conductivity (k)
  *
- * All functions accept temperature in **Kelvin [K]** and return values in
- * standard SI units.
+ * All functions accept temperature in Kelvin [K] and return values in
+ * standard SI units unless otherwise specified.
  */
 namespace steel {
 
-    // Temperature [K]
+    /// Temperature values of the Cp table [K]
     constexpr std::array<double, 15> T = { 300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700 };
 
-    // Specific heat [J kg^-1 K^-1]
+    /// Specific heat values of the Cp table [J kg^-1 K^-1]
     constexpr std::array<double, 15> Cp_J_kgK = { 510.0296,523.4184,536.8072,550.1960,564.0032,577.3920,590.7808,604.1696,617.5584,631.3656,644.7544,658.1432,671.5320,685.3392,698.7280 };
 
-    // Specific heat interpolation in temperature with complexity O(1)
+    /**
+    * @brief Specific heat interpolation in temperature with complexity O(1)
+    * @param Tquery Temperature for which the Cp is needed.
+    */
     inline double cp(double Tquery) {
 
         if (Tquery <= T.front()) return Cp_J_kgK.front();
@@ -195,10 +62,16 @@ namespace steel {
         return y0 + t * (y1 - y0);
     }
 
-    // Density [kg/m^3]
+    /**
+    * @brief Density as a function of temperature [kg/m3]
+    * @param T Temperature at which the density is needed.
+    */
     double rho(double T) { return (7.9841 - 2.6560e-4 * T - 1.158e-7 * T * T) * 1e3; }
 
-    // Thermal conductivity [W/(m·K)]
+    /**
+    * @brief Thermal conductivity as a function of temperature [W/(m*K)]
+    * @param T Temperature for which the thermal conductivity is needed.
+    */
     double k(double T) { return (3.116e-2 + 1.618e-4 * T) * 100.0; }
 }
 
@@ -488,6 +361,266 @@ namespace vapor_sodium {
 
 #pragma endregion
 
+// =======================================================================
+//
+//                        [VARIOUS ALGORITHMS]
+//
+// =======================================================================
+
+#pragma region various_algorithms
+/**
+ * @brief Solves a tridiagonal system of linear equations A*x = d using the Thomas Algorithm (TDMA).
+ *
+ * This function efficiently solves a system where the coefficient matrix A is tridiagonal,
+ * meaning it only has non-zero elements on the main diagonal, the sub-diagonal, and the super-diagonal.
+ * The system is defined by:
+ * - 'a': The sub-diagonal (below the main diagonal). a[0] is typically unused.
+ * - 'b': The main diagonal.
+ * - 'c': The super-diagonal (above the main diagonal). c[N-1] is typically unused.
+ * - 'd': The right-hand side vector.
+ *
+ * The method consists of two main phases: forward elimination and back substitution,
+ * which is optimized for the sparse tridiagonal structure.
+ *
+ * @param a The sub-diagonal vector (size N, with a[0] often being zero/unused).
+ * @param b The main diagonal vector (size N). Must contain non-zero elements.
+ * @param c The super-diagonal vector (size N, with c[N-1] often being zero/unused).
+ * @param d The right-hand side vector (size N).
+ * @return std::vector<double> The solution vector 'x' (size N).
+ * * @note This implementation assumes the system is diagonally dominant or otherwise
+ * stable, as it does not include pivoting. The vectors 'a', 'b', 'c', and 'd' must
+ * all have the same size N, corresponding to the size of the system.
+ */
+std::vector<double> solveTridiagonal(const std::vector<double>& a,
+    const std::vector<double>& b,
+    const std::vector<double>& c,
+    const std::vector<double>& d) {
+
+    int n = b.size();
+    std::vector<double> c_star(n, 0.0);
+    std::vector<double> d_star(n, 0.0);
+    std::vector<double> x(n, 0.0);
+
+    c_star[0] = c[0] / b[0];
+    d_star[0] = d[0] / b[0];
+
+    for (int i = 1; i < n; i++) {
+
+        double m = b[i] - a[i] * c_star[i - 1];
+        c_star[i] = c[i] / m;
+        d_star[i] = (d[i] - a[i] * d_star[i - 1]) / m;
+    }
+
+    x[n - 1] = d_star[n - 1];
+
+    for (int i = n - 2; i >= 0; i--)
+        x[i] = d_star[i] - c_star[i] * x[i + 1];
+
+    return x;
+}
+
+using Vec6 = std::array<double, 6>;
+using Mat6x6 = std::array<std::array<double, 6>, 6>;
+
+/**
+ * @brief Solves a 6x6 system of linear equations A*x = b using Gaussian elimination.
+ *
+ * This function applies Gaussian elimination with partial pivoting to transform the
+ * augmented matrix [A|b] into an upper triangular form. It then solves for the
+ * unknown vector 'x' using back substitution. The function works only for 6x6
+ * systems due to its fixed size implementation.
+ *
+ * @param A The 6x6 coefficient matrix. This matrix is modified in-place
+ * (transformed into an upper triangular matrix).
+ * @param b The 6-element right-hand side vector. This vector is also modified
+ * in-place to reflect the operations on A.
+ * @return Vec6 The solution vector 'x' for the system A*x = b.
+ * @throws std::runtime_error If the matrix A is singular (or near-singular,
+ * meaning a pivot element is zero), preventing a unique solution.
+ *
+ * @note This implementation uses **partial pivoting** to ensure numerical stability
+ * by selecting the largest absolute element in the current column below the
+ * pivot as the pivot element.
+ */
+static Vec6 solve6(Mat6x6 A, Vec6 b) {
+
+    const int N = 6;
+
+    for (int k = 0; k < N; ++k) {
+
+        int piv = k;
+        double mx = std::abs(A[k][k]);
+
+        for (int i = k + 1; i < N; ++i) {
+            double v = std::abs(A[i][k]);
+            if (v > mx) { mx = v; piv = i; }
+        }
+
+        if (mx == 0.0) { throw std::runtime_error("Singular matrix"); }
+
+        if (piv != k) {
+            std::swap(A[piv], A[k]);
+            std::swap(b[piv], b[k]);
+        }
+
+        double diag = A[k][k];
+
+        for (int j = k; j < N; ++j) A[k][j] /= diag;
+
+        b[k] /= diag;
+
+        for (int i = k + 1; i < N; ++i) {
+            double f = A[i][k];
+            if (f == 0.0) continue;
+            for (int j = k; j < N; ++j) A[i][j] -= f * A[k][j];
+            b[i] -= f * b[k];
+        }
+    }
+
+    Vec6 x{};
+    for (int i = N - 1; i >= 0; --i) {
+        double s = b[i];
+        for (int j = i + 1; j < N; ++j) s -= A[i][j] * x[j];
+        x[i] = s;
+    }
+
+    return x;
+}
+
+// Initializes vector with equally spaced values between min and max
+std::vector<double> linspace(double T_min, double T_max, int N) {
+    std::vector<double> T(N);
+    double dT = (T_max - T_min) / (N - 1);
+    for (int i = 0; i < N; i++) T[i] = T_min + i * dT;
+    return T;
+}
+
+// Adaptive SOLID time-step that calculates new time step as the smaller between: 
+//      Fourier limit (CFo number)
+//      Mass source/sink limit (CS limit)
+double new_dt_w(double dz, double dt_old,
+    const std::vector<double>& T,
+    const std::vector<double>& St) {
+
+    const double CFo = 0.5, CS = 0.5;                           // Limit coefficients
+    const double epsS = 1e-12;                                  // This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                                   // Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                                   // Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e-3;                  // Timestep boundaries [s]
+
+    int N = St.size();
+
+    double dt_cand = dt_max;
+    for (int i = 0; i < N; ++i) {
+
+        const double alpha = steel::k(T[i]) / (steel::cp(T[i]) * steel::rho(T[i]));
+
+        // Minimum time step due to CFL
+        const double dt_c = CFo * dz * dz / alpha;
+
+        // Minimum time step due to CS limit
+        double dt_s = CS * steel::rho(T[i]) * steel::cp(T[i]) / (std::abs(St[i]) + epsS);
+
+        double dti = std::min(dt_c, dt_s);
+        dt_cand = std::min(dt_cand, dti);           // Loop on each node to find the minimum timestep necessary
+    }
+
+    // Timestep lower boundary overrall and damping the correction
+    double dt_new = std::min(dt_max, std::max(dt_min, std::max(theta * dt_cand, rdown * dt_old)));
+    return dt_new;
+}
+
+
+// Adaptive LIQUID time-step that calculates new time step as the smaller between: 
+//      Convective limit (CFL number)
+//      Mass source/sink limit (CS limit)
+double new_dt_x(double dz, double dt_old,
+    const std::vector<double>& u,
+    const std::vector<double>& T,
+    const std::vector<double>& Sm) {
+
+    const double CFL = 0.5, CS = 0.5;                           // Limit coefficients
+    const double epsS = 1e-12;                                  // This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                                   // Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                                   // Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e-3;                  // Timestep boundaries [s]
+
+    int N = u.size();
+
+    double dt_cand = dt_max;
+    for (int i = 0; i < N; ++i) {
+
+        // Minimum time step due to CFL
+        double dt_c = CFL * dz / std::abs(u[i]);
+
+        // Minimum time step due to CS limit
+        double dt_s = CS * liquid_sodium::rho(T[i]) / (std::abs(Sm[i]) + epsS);
+
+        double dti = std::min(dt_c, dt_s);
+        dt_cand = std::min(dt_cand, dti);           // Loop on each node to find the minimum timestep necessary
+    }
+
+    // Timestep lower boundary overrall and damping the correction
+    double dt_new = std::min(dt_max, std::max(dt_min, std::max(theta * dt_cand, rdown * dt_old)));
+    return dt_new;
+}
+
+// Adaptive VAPOR time-step that calculates new time step as the smaller between: 
+//      Convective-acoustic limit (CFL number)
+//      Mass source/sink limit (CS limit)
+//      Pressure correction (CP limit)
+double new_dt_v(double dz, double dt_old,
+    const std::vector<double>& u,
+    const std::vector<double>& T,
+    const std::vector<double>& rho,
+    const std::vector<double>& Sm,
+    const std::vector<double>& bVU) {
+
+    const double gamma = 1.32;                                  // Vapor sodium gas constant [-]
+    const double Rv = 361.8;                                    // Gas constant for the sodium vapor [J/(kg K)]
+    const double CFL = 0.5, CS = 0.5, CP = 0.5;                 // Limit coefficients
+    const double epsS = 1e-12;                                  // This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                                   // Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                                   // Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e3;                  // Timestep boundaries [s]
+
+    int N = u.size();
+    auto invb = [&](int i) { return 1.0 / std::max(bVU[i], 1e-30); };
+
+    double dt_cand = dt_max;
+    for (int i = 0; i < N; ++i) {
+
+        // Minimum time step due to CFL
+        double a = std::sqrt(gamma * Rv * T[i]);
+        double dt_c = CFL * dz / (std::abs(u[i]) + a);
+
+        // Minimum time step due to CS limit
+        double dt_s = CS * rho[i] / (std::abs(Sm[i]) + epsS);
+
+        // Minimum time step due to CP limit
+        double dt_p = 1e99;
+        if (i > 0 && i < N - 1) {
+            double invbL = 0.5 * (invb(i - 1) + invb(i));
+            double invbR = 0.5 * (invb(i) + invb(i + 1));
+            double rhoL = 0.5 * (rho[i - 1] + rho[i]);
+            double rhoR = 0.5 * (rho[i] + rho[i + 1]);
+            double El = rhoL * invbL / dz;
+            double Er = rhoR * invbR / dz;
+            double psi = 1.0 / (Rv * T[i]);
+            dt_p = CP * psi * dz / (El + Er + 1e-30);
+        }
+
+        double dti = std::min(std::min(dt_c, dt_s), std::min(dt_s, dt_p));
+        dt_cand = std::min(dt_cand, dti);           // Loop on each node to find the minimum timestep necessary
+    }
+
+    // Timestep lower boundary overrall and damping the correction
+    double dt_new = std::min(dt_max, std::max(dt_min, std::max(theta * dt_cand, rdown * dt_old)));
+    return dt_new;
+}
+
+#pragma endregion
+
 //-------------------------------------------------------------
 // Simplified 1D transient coupling between wall, wick, and vapor
 //-------------------------------------------------------------
@@ -513,8 +646,8 @@ int main() {
     const double gamma = 1.66;              // Ratio between constant pressure specific heat and constant volume specific heat [-] 
 
     // Environmental boundary conditions
-    const double h_conv = 1000;             // Convective heat transfer coefficient for external heat removal [W/m^2/K]
-    const double q_pp_evaporator = 1e6;     // Heat flux at evaporator [W/m^2]
+    const double h_conv = 10;             // Convective heat transfer coefficient for external heat removal [W/m^2/K]
+    const double power = 1e3;               // Power at the evaporator side [W]
     const double T_env = 280.0;             // External environmental temperature [K]
 
     // Geometric parameters
@@ -540,7 +673,7 @@ int main() {
     const double A_v_cross = M_PI * r_inner * r_inner;                                      // Vapor cross-sectional area [m^2]
 
     // Time-stepping parameters
-    const double dt = 1e-7;                         // Time step [s]
+    double dt = 1e-7;                         // Initial time step [s] (then it is updated according to the limits)
     const int nSteps = 50;                          // Number of timesteps
     const double time_total = nSteps * dt;          // Total simulation time [s]
 
@@ -548,19 +681,17 @@ int main() {
     const double K = 1e-4;                          // Permeability [m^2]
     const double CF = 0.0;                          // Forchheimer coefficient [1/m]
 
-    // PISO parameters for the wick
-    const int tot_x_iter = 1000;                   // Maximum number of SIMPLE iterations
-    const int corr_x_iter = 2;        // PISO correctors per iteration [-]
-    const double tol_x = 1e-8;                 // Convergence tolerance on the velocity field
+    // PISO Wick parameters
+    const int tot_outer_iter_x = 10000;                 // Outer iterations per time-step [-]
+    const int tot_inner_iter_x = 500;                    // Inner iterations per outer iteration [-]
+    const double outer_tol_x = 1e-6;                    // Tolerance for the inner iterations [-]
+    const double inner_tol_x = 1e-4;                    // Tolerance for the inner iterations [-]
 
-    // Numerical and relaxation parameters for the wick
-    const double p_x_relax = 0.3;                     // Pressure relaxation factor
-    const double v_x_relax = 1.0;                     // Velocity relaxation factor
-
-    // PISO parameters for the vapor
-    const int tot_v_iter = 1000;       // Inner iterations per step [-]
-    const int corr_v_iter = 3;        // PISO correctors per iteration [-]
-    const double tol_v = 1e-8;        // Tolerance for the inner iterations [-]
+    // PISO Vapor parameters
+    const int tot_outer_iter_v = 10000;                  // Outer iterations per time-step [-]
+    const int tot_inner_iter_v = 500;                    // Inner iterations per outer iteration [-]
+    const double outer_tol_v = 1e-6;                     // Tolerance for the inner iterations [-]
+    const double inner_tol_v = 1e-4;                     // Tolerance for the inner iterations [-]
 
     // --- Initial temperature fields ---
     // Node partition
@@ -569,16 +700,19 @@ int main() {
     const int N_a = N - (N_e + N_c);
 
     // Temperature min and max
-    double T_w_min = 700.0, T_w_max = 850.0;
-    double T_x_min = 725.0, T_x_max = 825.0;
-    double T_v_min = 750.0, T_v_max = 800.0;
+    double T_o_w_min = 875.0, T_o_w_max = 1100.0;
+    double T_w_min = 880.0, T_w_max = 1095.0;
+    double T_w_x_min = 885.0, T_w_x_max = 1090.0;
+    double T_x_min = 890.0, T_x_max = 1085.0;
+    double T_x_v_min = 895.0, T_x_v_max = 1080.0;
+    double T_v_min = 900.0, T_v_max = 1075.0;
 
+    std::vector<double> T_o_w = linspace(T_o_w_max, T_o_w_min, N);
     std::vector<double> T_w_bulk = linspace(T_w_max, T_w_min, N);
+    std::vector<double> T_w_x = linspace(T_w_x_max, T_w_x_min, N);
     std::vector<double> T_x_bulk = linspace(T_x_max, T_x_min, N);
+    std::vector<double> T_x_v = linspace(T_x_v_max, T_x_v_min, N);
     std::vector<double> T_v_bulk = linspace(T_v_max, T_v_min, N);
-    std::vector<double> T_o_w = linspace(T_w_max + 2, T_w_min - 2, N);
-    std::vector<double> T_w_x = linspace(0.5 * (T_w_max + T_x_max), 0.5 * (T_w_min + T_x_min), N);
-    std::vector<double> T_x_v = linspace(T_v_max + 5, T_v_min - 5, N);
 
     std::vector<double> T_x_v_old = T_x_v;
     std::vector<double> T_old_x = T_x_bulk;
@@ -594,7 +728,7 @@ int main() {
 
     std::vector<double> u_v(N, 0.1), p_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1])), rho_v(N, 8e-3), p_prime_v(N, 0.0);
     std::vector<double> p_old_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1])), rho_old_v(N, 8e-3), u_old_v(N, 0.1);
-    std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_x_v[N - 1]));                          // Storage for ghost nodes aVT the boundaries
+    std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_v_bulk[N - 1]));                          // Storage for ghost nodes aVT the boundaries
     double* p_padded_v = &p_storage_v[1];   // Poìnter to work on the storage with the same indes
 
     // Liquid boundary conditions (Dirichlet u at inlet, p at outlet, T at both ends)
@@ -635,6 +769,8 @@ int main() {
     std::vector<double> aGamma(N, 0.0), bGamma(N, 0.0), cGamma(N, 0.0);
     std::vector<double> aGammaOld(N, 0.0), bGammaOld(N, 0.0), cGammaOld(N, 0.0);
 
+    const double q_pp_evaporator = power / (2 * M_PI * L * r_outer);     // Heat flux at evaporator [W/m^2]
+
     // Heat fluxes at the interfaces [W/m^2]
     std::vector<double> q_o_w(N, 0.0);           // Heat flux across outer wall (directed to wall)
     std::vector<double> q_w_x_wall(N, 0.0);      // Heat flux across wall-wick interface (directed to wick)
@@ -649,6 +785,9 @@ int main() {
 
     std::vector<double> Gamma_xg_new(N, 0.0);       // Mass transfer rate [kg / (m^3 s)]
     std::vector<double> m_dot_x_v(N, 0.0);          // Evaporation mass flux at the wick-vapor interface [kg/m2/s]
+
+    std::vector<double> Q_w(N, 0.0);                 // Wall heat source [W / m^3]
+
 
     // The coefficient bVU is needed in momentum predictor loop and pressure correction to estimate the velocities aVT the faces using the Rhie and Chow correction
     std::vector<double> aVU(N, 0.0), bVU(N, 2 * (4.0 / 3.0 * vapor_sodium::mu(1000) / dz) + dz / dt * rho_v[0]), cVU(N, 0.0), dVU(N, 0.0);
@@ -706,6 +845,13 @@ int main() {
     // Time-stepping loop
     for (int n = 0; n < nSteps; ++n) {
 
+        dt = std::min(std::min(new_dt_w(dz, dt, T_w_bulk, Q_w),
+                               new_dt_x(dz, dt, u_x, T_x_bulk, Gamma_xg_new)), 
+                      std::min(new_dt_x(dz, dt, u_x, T_x_bulk, Gamma_xg_new), 
+                               new_dt_v(dz, dt, u_v, T_v_bulk, rho_v, Gamma_xg_new, bVU)));
+
+        printf("");
+
         // =======================================================================
         //
         //                           [1. SOLVE WALL]
@@ -721,26 +867,26 @@ int main() {
         aTW[0] = 0.0; bTW[0] = 1.0; cTW[0] = -1.0; dTW[0] = 0.0;
         aTW[N - 1] = -1.0; bTW[N - 1] = 1.0; cTW[N - 1] = 0.0; dTW[N - 1] = 0.0;
 
-        for (int ix = 1; ix < N - 1; ++ix) {
+        for (int i = 1; i < N - 1; ++i) {
 
-            const double Cp_wall_node = steel::cp(T_w_bulk[ix]);
-            const double k_wall_node = steel::k(T_w_bulk[ix]);
-            const double rho_wall_node = steel::rho(T_w_bulk[ix]);
+            const double Cp_wall_node = steel::cp(T_w_bulk[i]);
+            const double k_wall_node = steel::k(T_w_bulk[i]);
+            const double rho_wall_node = steel::rho(T_w_bulk[i]);
 
             const double r = (k_wall_node * dt) / (Cp_wall_node * dz * dz);
 
             // Volumetric heat source in the wall due to heat flux at the outer wall [W/m^3]
-            const double volum_heat_source_o_w = q_o_w[ix] * 2 * r_outer / (r_outer * r_outer - r_interface * r_interface);
+            const double volum_heat_source_o_w = q_o_w[i] * 2 * r_outer / (r_outer * r_outer - r_interface * r_interface);
 
             // Volumetric heat source in the wall due to heat flux at the wall-wick interface [W/m^3]
-            const double volum_heat_source_w_x = q_w_x_wall[ix] * 2 * r_interface / (r_outer * r_outer - r_interface * r_interface);
+            const double volum_heat_source_w_x = q_w_x_wall[i] * 2 * r_interface / (r_outer * r_outer - r_interface * r_interface);
 
-            aTW[ix] = -r;
-            bTW[ix] = 1 + 2 * r;
-            cTW[ix] = -r;
-            dTW[ix] = T_w_bulk[ix] +
-                volum_heat_source_o_w * dt / (rho_wall_node * Cp_wall_node) -
-                volum_heat_source_w_x * dt / (rho_wall_node * Cp_wall_node);
+            Q_w[i] = volum_heat_source_o_w - volum_heat_source_w_x;
+
+            aTW[i] = -r;
+            bTW[i] = 1 + 2 * r;
+            cTW[i] = -r;
+            dTW[i] = T_w_bulk[i] + Q_w[i] * dt / (Cp_wall_node * rho_wall_node);
         }
 
         T_w_bulk = solveTridiagonal(aTW, bTW, cTW, dTW);
@@ -771,14 +917,18 @@ int main() {
         T_old_x = T_x_bulk;
         p_old_x = p_x;
 
-        // PISO iterations
-        int iter_liquid = 0;
-        double maxErr_liquid = 1.0;
-
         // Pressure coupling: the meniscus in the last cell of the domain is considered flat, so the pressure of the wick is equal to the pressure of the vapor
         p_outlet_x = p_v[N - 1];
 
-        while (iter_liquid < tot_x_iter && maxErr_liquid > tol_x) {
+        // Outer iterations
+        double u_error_x = 1.0;
+        int outer_iter_x = 0;
+
+        // Inner iterations
+        double p_error_x;
+        int inner_iter_x;
+
+        while (outer_iter_x < tot_outer_iter_x && u_error_x > outer_tol_x) {
 
             // =======================================================================
             //
@@ -829,9 +979,15 @@ int main() {
 
             u_x = solveTridiagonal(aXU, bXU, cXU, dXU);
 
+            printf("");
+
             #pragma endregion
 
-            for (int piso = 0; piso < corr_x_iter; piso++) {
+            // Inner iterations
+            p_error_x = 1.0;
+            inner_iter_x = 0;
+
+            while (inner_iter_x < tot_inner_iter_x && p_error_x > inner_tol_x) {
 
                 // =======================================================================
                 //
@@ -881,6 +1037,8 @@ int main() {
 
                 p_prime_x = solveTridiagonal(aXP, bXP, cXP, dXP);
 
+                printf("");
+
                 #pragma endregion
 
                 // =======================================================================
@@ -891,10 +1049,14 @@ int main() {
 
                 #pragma region pressure_corrector
 
+                p_error_x = 0.0;
                 for (int i = 0; i < N; i++) {
 
+                    double p_prev_x = p_x[i];
                     p_x[i] += p_prime_x[i];     // Note that PISO does not require an under-relaxation factor
                     p_storage_x[i + 1] = p_x[i];
+
+                    p_error_x = std::max(p_error_x, std::fabs(p_x[i] - p_prev_x));
                 }
 
                 p_storage_x[0] = p_storage_x[1];
@@ -910,20 +1072,23 @@ int main() {
 
                 #pragma region velocity_corrector
 
-                maxErr_liquid = 0.0;
+                u_error_x = 0.0;
                 for (int i = 1; i < N - 1; i++) {
 
                     double u_prev = u_x[i];
                     u_x[i] = u_x[i] - (p_prime_x[i + 1] - p_prime_x[i - 1]) / (2.0 * dz * bXU[i]);
 
-                    maxErr_liquid = std::max(maxErr_liquid, std::fabs(u_x[i] - u_prev));
+                    u_error_x = std::max(u_error_x, std::fabs(u_x[i] - u_prev));
                 }
 
                 #pragma endregion
 
+                inner_iter_x++;
+
+                printf("");
             }
 
-            iter_liquid++;
+            outer_iter_x++;
 
             printf("");
         }
@@ -1161,14 +1326,18 @@ int main() {
         rho_old_v = rho_v;
         p_old_v = p_v;
 
-        // PISO iterations
-        double maxErr_vapor = 1.0;
-        int iter_vapor = 0;
-
         // Wick vapor coupling: the pressure in the last cell of the domain is considered the saturation pressure at the temperature of the interface
         p_v[N - 1] = p_outlet_v;
 
-        while (iter_vapor < tot_v_iter && maxErr_vapor > tol_v) {
+        // Outer iterations
+        double u_error_v = 1.0;
+        int outer_iter_v = 0;
+
+        // Inner iterations
+        double p_error_v;
+        int inner_iter_v;
+
+        while (outer_iter_v < tot_outer_iter_v && u_error_v > outer_tol_v) {
 
             // =======================================================================
             //
@@ -1242,7 +1411,11 @@ int main() {
 
             #pragma endregion
 
-            for (int piso = 0; piso < corr_v_iter; piso++) {
+            // Inner iterations
+            p_error_v = 1.0;
+            inner_iter_v = 0;
+
+            while (inner_iter_v < tot_inner_iter_v && p_error_v > inner_tol_v) {
 
                 // =======================================================================
                 //
@@ -1308,11 +1481,14 @@ int main() {
 
                 #pragma region pressure_corrector
 
+                p_error_v = 0.0;
                 for (int i = 0; i < N; i++) {
 
+                    double p_prev = p_v[i];
                     p_v[i] += p_prime_v[i]; // Note that PISO does not require an under-relaxation factor
                     p_storage_v[i + 1] = p_v[i];
 
+                    p_error_v = std::max(p_error_v, std::fabs(p_v[i] - p_prev));
                 }
 
                 p_storage_v[0] = p_storage_v[1];
@@ -1336,7 +1512,7 @@ int main() {
 
                 #pragma region velocity_corrector
 
-                maxErr_vapor = 0.0;
+                u_error_v = 0.0;
                 for (int i = 1; i < N - 1; i++) {
 
                     const double u_prev_v = u_v[i];
@@ -1355,16 +1531,17 @@ int main() {
 
                     }
 
-                    maxErr_vapor = std::max(maxErr_vapor, std::fabs(u_v[i] - u_prev_v));
+                    u_error_v = std::max(u_error_v, std::fabs(u_v[i] - u_prev_v));
                 }
 
                 printf("");
 
                 #pragma endregion
 
+                inner_iter_v++;
             }
 
-            iter_vapor++;
+            outer_iter_v++;
         }
 
         printf("");
