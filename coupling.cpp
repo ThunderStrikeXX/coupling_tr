@@ -788,10 +788,10 @@ int main() {
     const double inner_tol_x = 1e-4;                ///< Tolerance for the inner iterations [-]
 
     // PISO Vapor parameters
-    const int tot_outer_iter_v = 10000;             ///< Outer iterations per time-step [-]
-    const int tot_inner_iter_v = 500;               ///< Inner iterations per outer iteration [-]
-    const double outer_tol_v = 1e-6;                ///< Tolerance for the inner iterations [-]
-    const double inner_tol_v = 1e-4;                ///< Tolerance for the inner iterations [-]
+    const int tot_outer_iter_v = 1000;             ///< Outer iterations per time-step [-]
+    const int tot_inner_iter_v = 100;               ///< Inner iterations per outer iteration [-]
+    const double outer_tol_v = 1e-4;                ///< Tolerance for the inner iterations [-]
+    const double inner_tol_v = 1e-2;                ///< Tolerance for the inner iterations [-]
 
     // Node partition
     const int N_e = static_cast<int>(std::floor(evaporator_length / dz));   ///< Number of nodes of the evaporator region [-]
@@ -838,6 +838,8 @@ int main() {
     std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_v_bulk[N - 1]));   ///< Vapor padded pressure vector for R&C correction [Pa]
     double* p_padded_v = &p_storage_v[1];                                           ///< Poìnter to work on the storage with the same indes
 
+    for (int i = 0; i < N; ++i) p_v[i] = vapor_sodium::P_sat(T_x_v[i]);
+
     // Wick BCs
     const double u_inlet_x = 0.0;                                   ///< Wick inlet velocity [m/s]
     const double u_outlet_x = 0.0;                                  ///< Wick outlet velocity [m/s]
@@ -863,7 +865,6 @@ int main() {
     std::vector<double> k_turb(N, k0);
     std::vector<double> omega_turb(N, omega0);
     std::vector<double> mu_t(N, 0.0);
-
 
     /**
     * @brief Vapor Equation of State update function. Updates density
@@ -895,7 +896,7 @@ int main() {
 
     // Models
     const int rhie_chow_on_off_x = 1;             ///< 0: no wick RC correction, 1: wick with RC correction
-    const int rhie_chow_on_off_v = 0;             ///< 0: no vapor RC correction, 1: vapor with RC correction
+    const int rhie_chow_on_off_v = 1;             ///< 0: no vapor RC correction, 1: vapor with RC correction
     const int SST_model_turbulence_on_off = 0;    ///< 0: no vapor turbulence, 1: vapor with turbulence
 
     // Mass sources/fluxes
@@ -1406,6 +1407,8 @@ int main() {
              */
             m_dot_x_v[i] = beta * (vapor_sodium::P_sat(T_x_v[i]) - p_v[i]);     
 
+            printf("");
+
             /**
              * Variable b [-], used to calculate omega. 
              * Ratio of the overrall speed to the most probable velocity of the vapor.
@@ -1712,7 +1715,6 @@ int main() {
                     const double d_l_face = 0.5 * (1.0 / bVU[i - 1] + 1.0 / bVU[i]) / dz;    ///< 1/Ap [(m2 s)/kg] average on left face
                     const double d_r_face = 0.5 * (1.0 / bVU[i] + 1.0 / bVU[i + 1]) / dz;    ///< 1/Ap [(m2 s)/kg] average on right face
 
-
                     /// RC correction for the left face velocity
                     const double rhie_chow_l = -d_l_face / 4 * (p_padded_v[i - 2] - 3 * p_padded_v[i - 1] + 3 * p_padded_v[i] - p_padded_v[i + 1]);
                     
@@ -1741,7 +1743,7 @@ int main() {
                     aVP[i] = -E_l;                                              ///< [s/m]
                     cVP[i] = -E_r;                                              ///< [s/m]
                     bVP[i] = E_l + E_r + psi_i * dz / dt;                       ///< [s/m]
-                    dVP[i] = +Gamma_xv[i] * dz - mass_imbalance;                ///< [kg/(m^2 s)]
+                    dVP[i] = +mass_flux - mass_imbalance;                ///< [kg/(m^2 s)]
 
                     printf("");
                 }
@@ -1821,7 +1823,7 @@ int main() {
 
                     } else {
 
-                        std::cout << "Sonic limit reached, limiting velocity" << "\n";
+                        //std::cout << "Sonic limit reached, limiting velocity" << "\n";
                         u_v[i] = sonic_limit;
 
                     }
