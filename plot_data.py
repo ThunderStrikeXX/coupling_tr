@@ -9,6 +9,15 @@ def load_last_line(filename):
             pass
     return np.fromstring(line.strip(), sep=' ')
 
+def load_last_two_lines(filename):
+    with open(filename) as f:
+        lines = f.readlines()
+    if len(lines) < 2:
+        return None, np.fromstring(lines[-1].strip(), sep=' ')
+    prev = np.fromstring(lines[-2].strip(), sep=' ')
+    last = np.fromstring(lines[-1].strip(), sep=' ')
+    return prev, last
+
 if len(sys.argv) < 3:
     print("Usage: python plot_data.py x.txt y1.txt y2.txt ...")
     sys.exit(1)
@@ -50,7 +59,11 @@ for start in range(0, n, per_fig):
     for i, ax in enumerate(axes):
         idx = start + i
         if idx < end:
-            y = load_last_line(y_files[idx])
+            prev, y = load_last_two_lines(y_files[idx])
+            ax.plot(x, y, label="current")
+            if prev is not None:
+                ax.plot(x, prev, "--", label="previous")
+            ax.legend()
             ax.plot(x, y)
             ax.set_title(f"{names[idx]} {units[idx]}")
             ax.set_xlabel("Axial length [m]")

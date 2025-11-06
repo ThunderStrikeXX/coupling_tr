@@ -10,6 +10,10 @@
 #include <cstddef>
 #include <filesystem>
 
+#define DEBUG_POINT() ((void)0)
+
+bool warnings = false;
+
 // =======================================================================
 //
 //                       [MATERIAL PROPERTIES]
@@ -101,7 +105,7 @@ namespace liquid_sodium {
     */
     inline double rho(double T) {
 
-        if (T < Tsolid) std::cout << "Warning, temperature " << T << " is below solidification temperature (" << Tsolid << ")!";
+        if (T < Tsolid && warnings == true) std::cout << "Warning, temperature " << T << " is below solidification temperature (" << Tsolid << ")!";
         return 219.0 + 275.32 * (1.0 - T / Tcrit) + 511.58 * pow(1.0 - T / Tcrit, 0.5);
     }
 
@@ -110,7 +114,7 @@ namespace liquid_sodium {
     */
     inline double k(double T) {
 
-        if (T < Tsolid) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
+        if (T < Tsolid && warnings == true) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
         return 124.67 - 0.11381 * T + 5.5226e-5 * T * T - 1.1842e-8 * T * T * T;
     }
 
@@ -119,7 +123,7 @@ namespace liquid_sodium {
     */
     inline double cp(double T) {
 
-        if (T < Tsolid) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
+        if (T < Tsolid && warnings == true) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
         double dXT = T - 273.15;
         return 1436.72 - 0.58 * dXT + 4.627e-4 * dXT * dXT;
     }
@@ -129,7 +133,7 @@ namespace liquid_sodium {
     */
     inline double mu(double T) {
 
-        if (T < Tsolid) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
+        if (T < Tsolid && warnings == true) std::cout << "Warning, temperature " << T << " is below solidification temperature!";
         return std::exp(-6.4406 - 0.3958 * std::log(T) + 556.835 / T);
     }
 
@@ -385,11 +389,11 @@ namespace vapor_sodium {
 
         // Extrapolation handling
         if (Tlow || Thigh || Plow || Phigh) {
-            if (Tlow)
+            if (Tlow && warnings == true)
                 std::cerr << "[Warning] Sodium vapor k: T=" << T << " < " << Tmin << " K. Using sqrt(T) extrapolation.\n";
-            if (Thigh)
+            if (Thigh && warnings == true)
                 std::cerr << "[Warning] Sodium vapor k: T=" << T << " > " << Tmax << " K. Using sqrt(T) extrapolation.\n";
-            if (Plow || Phigh)
+            if ((Plow || Phigh) && warnings == true)
                 std::cerr << "[Warning] Sodium vapor k: P outside ["
                 << Pmin << "," << Pmax << "] Pa. Using constant-P approximation.\n";
 
@@ -774,8 +778,8 @@ int main() {
     const double A_v_cross = M_PI * r_inner * r_inner;                                      ///< Vapor cross-sectional area [m^2]
 
     // Time-stepping parameters
-    double dt = 1e-7;                               ///< Initial time step [s] (then it is updated according to the limits)
-    const int nSteps = 50;                          ///< Number of timesteps
+    double dt = 1e-8;                               ///< Initial time step [s] (then it is updated according to the limits)
+    const int nSteps = 10000;                          ///< Number of timesteps
     const double time_total = nSteps * dt;          ///< Total simulation time [s]
 
     // Wick permeability parameters
@@ -825,7 +829,7 @@ int main() {
     std::vector<double> T_old_v = T_v_bulk;
 
     // Wick fields
-    std::vector<double> u_x(N, -0.01);                                              ///< Wick velocity field [m/s]
+    std::vector<double> u_x(N, -0.000001);                                              ///< Wick velocity field [m/s]
     std::vector<double> p_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               ///< Wick pressure field [Pa]
     std::vector<double> p_prime_x(N, 0.0);                                          ///< Wick correction pressure field [Pa]
     std::vector<double> p_old_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));           ///< Wick old pressure field [Pa]
@@ -981,19 +985,17 @@ int main() {
     /// Print number of working threads
     std::cout << "Threads: " << omp_get_max_threads() << "\n";
 
-
-
     /**
      * @brief Time-stepping loop. The timestep is calculated at the beginning of each loop.
      */
     for (int n = 0; n < nSteps; ++n) {
 
-        dt = std::min(std::min(new_dt_w(dz, dt, T_w_bulk, Q_w),
+        /*dt = std::min(std::min(new_dt_w(dz, dt, T_w_bulk, Q_w),
                                new_dt_x(dz, dt, u_x, T_x_bulk, Gamma_xv)), 
                       std::min(new_dt_x(dz, dt, u_x, T_x_bulk, Gamma_xv), 
-                               new_dt_v(dz, dt, u_v, T_v_bulk, rho_v, Gamma_xv, bVU)));
+                               new_dt_v(dz, dt, u_v, T_v_bulk, rho_v, Gamma_xv, bVU)));*/
 
-        printf("");
+        DEBUG_POINT();
 
         // =======================================================================
         //
@@ -1049,7 +1051,7 @@ int main() {
 
         T_w_bulk = solveTridiagonal(aTW, bTW, cTW, dTW);        ///< Vector of final wall bulk temperatures
 
-        printf("");
+        DEBUG_POINT();
 
         #pragma endregion
 
@@ -1155,7 +1157,7 @@ int main() {
 
             u_x = solveTridiagonal(aXU, bXU, cXU, dXU);
 
-            printf("");
+            DEBUG_POINT();
 
             #pragma endregion
 
@@ -1236,7 +1238,7 @@ int main() {
 
                 p_prime_x = solveTridiagonal(aXP, bXP, cXP, dXP);
 
-                printf("");
+                DEBUG_POINT();
 
                 #pragma endregion
 
@@ -1290,12 +1292,12 @@ int main() {
 
                 inner_iter_x++;
 
-                printf("");
+                DEBUG_POINT();
             }
 
             outer_iter_x++;
 
-            printf("");
+            DEBUG_POINT();
         }
 
         // =======================================================================
@@ -1306,7 +1308,7 @@ int main() {
 
         #pragma region temperature_calculator
 
-        printf("");
+        DEBUG_POINT();
 
         /// Tridiagonal coefficients for the wick temperature
         std::vector<double> aXT(N, 0.0), 
@@ -1391,7 +1393,7 @@ int main() {
 
         T_x_bulk = solveTridiagonal(aXT, bXT, cXT, dXT);
 
-        printf("");
+        DEBUG_POINT();
 
         #pragma endregion
 
@@ -1431,7 +1433,7 @@ int main() {
              */
             phi_x_v[i] = beta * (vapor_sodium::P_sat(T_x_v[i]) - p_v[i]);     
 
-            printf("");
+            DEBUG_POINT();
 
             /**
              * Variable b [-], used to calculate omega. 
@@ -1562,13 +1564,13 @@ int main() {
 
             Q_mass[i] = 0/*Gamma_xv[i] * (h_xv_v - h_xv_v)*/;  ///< Volumetric heat source [W/m3] due to evaporation/condensation (to be added to the wick and subtracted to the vapor)
 
-            printf("");
+            DEBUG_POINT();
         }
 
         // Coupling hypotheses: temperature is transferred to the pressure of the sodium vapor
         p_outlet_v = vapor_sodium::P_sat(T_x_v[N - 1]);
 
-        printf("");
+        DEBUG_POINT();
 
         #pragma endregion
 
@@ -1592,7 +1594,7 @@ int main() {
         /// Evaluates minimum temperature value of the vapor
         const double min_T_v = *std::min_element(T_v_bulk.begin(), T_v_bulk.end());
 
-        std::cout << "Solving wick! Time elapsed:" << dt * n << "/" << time_total
+        std::cout << "Solving vapor! Time elapsed:" << dt * n << "/" << time_total
             << ", max courant number: " << max_abs_u_v * dt / dz
             << ", max reynolds number: " << max_abs_u_v * r_interface * max_rho_v / vapor_sodium::mu(min_T_v) << "\n";
 
@@ -1670,7 +1672,7 @@ int main() {
                 bVU[i] = (std::max(F_r, 0.0) + std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F * dz;     ///< [kg/(m2 s)]
                 dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt /* + Su[i] * dz */;        ///< [kg/(m s2)]
 
-                printf("");
+                DEBUG_POINT();
             }
 
             /// Diffusion coefficients for the first and last node to define BCs
@@ -1699,7 +1701,7 @@ int main() {
 
             u_v = solveTridiagonal(aVU, bVU, cVU, dVU);
 
-            printf("");
+            DEBUG_POINT();
 
             #pragma endregion
 
@@ -1770,7 +1772,7 @@ int main() {
                     bVP[i] = E_l + E_r + psi_i * dz / dt;                           ///< [s/m]
                     dVP[i] = +mass_flux_source - mass_imbalance - change_density;          ///< [kg/(m^2 s)]
 
-                    printf("");
+                    DEBUG_POINT();
                 }
 
                 /// BCs for the correction of pressure: zero gradient at first node
@@ -1785,7 +1787,7 @@ int main() {
 
                 p_prime_v = solveTridiagonal(aVP, bVP, cVP, dVP);
 
-                printf("");
+                DEBUG_POINT();
 
                 #pragma endregion
 
@@ -1813,7 +1815,7 @@ int main() {
                 p_storage_v[0] = p_storage_v[1];
                 p_storage_v[N + 1] = p_outlet_v;
 
-                printf("");
+                DEBUG_POINT();
 
                 #pragma endregion
 
@@ -1856,7 +1858,7 @@ int main() {
                     u_error_v = std::max(u_error_v, std::fabs(u_v[i] - u_prev_v));
                 }
 
-                printf("");
+                DEBUG_POINT();
 
                 #pragma endregion
 
@@ -1865,10 +1867,10 @@ int main() {
 
             outer_iter_v++;
 
-            printf("");
+            DEBUG_POINT();
         }
 
-        printf("");
+        DEBUG_POINT();
 
         // =======================================================================
         //
@@ -2070,7 +2072,7 @@ int main() {
         // Update density with new p,T
         eos_update(rho_v, p_v, T_v_bulk);
 
-        printf("");
+        DEBUG_POINT();
 
         #pragma endregion
 
@@ -2093,63 +2095,63 @@ int main() {
         #pragma region output
 
         // Output in file
-        if (true) {
+        //if (true) {
 
-            std::cout << "Temperature outer wall: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_o_w[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature outer wall: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_o_w[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Temperature bulk wall: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_w_bulk[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature bulk wall: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_w_bulk[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Temperature wall-wick: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_w_x[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature wall-wick: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_w_x[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Temperature wick bulk: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_x_bulk[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature wick bulk: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_x_bulk[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Temperature wick vapor: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_x_v[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature wick vapor: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_x_v[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Temperature vapor bulk: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << T_v_bulk[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Temperature vapor bulk: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << T_v_bulk[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Pressure liquid: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << p_x[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Pressure liquid: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << p_x[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Velocity liquid: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << u_x[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Velocity liquid: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << u_x[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Pressure vapor: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << p_v[ix] << ", ";
-            } std::cout << "\n";
+        //    std::cout << "Pressure vapor: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << p_v[ix] << ", ";
+        //    } std::cout << "\n";
 
-            std::cout << "Velocity vapor: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << u_v[ix] << ", ";
-            } std::cout << "\n\n";
+        //    std::cout << "Velocity vapor: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << u_v[ix] << ", ";
+        //    } std::cout << "\n\n";
 
-            std::cout << "Mass flux: \n";
-            for (int ix = 0; ix < N; ++ix) {
-                std::cout << Gamma_xv[ix] << ", ";
-            } std::cout << "\n\n";
-        }
+        //    std::cout << "Mass flux: \n";
+        //    for (int ix = 0; ix < N; ++ix) {
+        //        std::cout << Gamma_xv[ix] << ", ";
+        //    } std::cout << "\n\n";
+        //}
 
         for (int i = 0; i < N; ++i) {
 
@@ -2217,7 +2219,7 @@ int main() {
 
         rho_output.flush();
 
-        system("python plot_data.py mesh.txt "
+        /*system("python plot_data.py mesh.txt "
             "results/vapor_velocity.txt "
             "results/vapor_bulk_temperature.txt "
             "results/vapor_pressure.txt "
@@ -2232,9 +2234,9 @@ int main() {
             "results/wall_wick_heat_flux.txt "
             "results/wick_vapor_heat_flux.txt "
             "results/wick_vapor_mass_source.txt "
-            "results/rho_vapor.txt");
+            "results/rho_vapor.txt");*/
 
-        printf("");
+        DEBUG_POINT();
 
         #pragma endregion
     }
