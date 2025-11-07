@@ -20,7 +20,7 @@ The code is implemented in **C++17**, following the structure of **THROHPUT**, *
 
 ## Repository Structure
 
-```
+```text
 
 ??? coupling.cpp
 ??? results/
