@@ -190,7 +190,7 @@ namespace vapor_sodium {
     /**
     * @brief Functions that clamps a value x to the range [a, b]
     */
-    inline double clamp(double x, double a, double b) { return std::max(a, std::min(x, b)); }
+    constexpr inline double clamp(double x, double a, double b) { return std::max(a, std::min(x, b)); }
 
     /**
     * @brief 1D table interpolation in T over monotone grid
@@ -217,8 +217,8 @@ namespace vapor_sodium {
       * @return Enthalpy of sodium vapor [J/kg]
       */
     inline double h(double T) {
-        const double T_min = 1170.525;
-        const double T_max = 6000.0;
+        constexpr double T_min = 1170.525;
+        constexpr double T_max = 6000.0;
         if (T < T_min) T = T_min;
         if (T > T_max) T = T_max;
 
@@ -689,7 +689,7 @@ int main() {
     const double T_env = 280.0;             ///< External environmental temperature [K]
 
     // Geometric parameters
-    const int N = 5;                                                         ///< Number of axial nodes [-]
+    const int N = 1000;                                                         ///< Number of axial nodes [-]
     const double L = 0.982; 			                                        ///< Length of the heat pipe [m]
     const double dz = L / N;                                                    ///< Axial discretization step [m]
     const double evaporator_length = 0.502;                                     ///< Evaporator length [m]
@@ -712,7 +712,7 @@ int main() {
 
     // Time-stepping parameters
     double dt = 1e-8;                               ///< Initial time step [s] (then it is updated according to the limits)
-    const int nSteps = 10000;                          ///< Number of timesteps
+    const int nSteps = 1000;                          ///< Number of timesteps
     const double time_total = nSteps * dt;          ///< Total simulation time [s]
 
     // Wick permeability parameters
@@ -813,7 +813,6 @@ int main() {
     */
     auto eos_update = [&](std::vector<double>& rho_, const std::vector<double>& p_, const std::vector<double>& T_) {
 
-        // #pragma omp parallel
         for (int i = 0; i < N; i++) { rho_[i] = std::max(1e-6, p_[i] / (Rv * T_v_bulk[i])); }
 
         }; eos_update(rho_v, p_v, T_v_bulk);
@@ -918,6 +917,8 @@ int main() {
     /// Print number of working threads
     std::cout << "Threads: " << omp_get_max_threads() << "\n";
 
+    double start = omp_get_wtime();
+
     /**
      * @brief Time-stepping loop. The timestep is calculated at the beginning of each loop.
      */
@@ -958,6 +959,7 @@ int main() {
         /**
          * @brief Loop on nodes. Assembles the coefficients for the tridiagonal system of wall temperature
          */
+
         for (int i = 1; i < N - 1; ++i) {
 
             /// Physical properties of the i-th wall node
@@ -1040,7 +1042,7 @@ int main() {
 
             #pragma region momentum_predictor
 
-            #pragma omp parallel for
+            // Parallelizing here does not save time
             for (int i = 1; i < N - 1; i++) {
 
                 const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density of the central cell
@@ -1120,7 +1122,8 @@ int main() {
                 /**
                  * @brief Calculates the coefficients for the tridiagonal system of the pressure correction p'
                  */
-                #pragma omp parallel for
+
+                
                 for (int i = 1; i < N - 1; i++) {
 
                     const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density [kg/m3] of the central cell
@@ -1187,6 +1190,8 @@ int main() {
                   * @brief Corrects the pressure with p'
                   */
                 p_error_x = 0.0;
+
+                
                 for (int i = 0; i < N; i++) {
 
                     double p_prev_x = p_x[i];
@@ -1213,6 +1218,8 @@ int main() {
                   * @brief Corrects the velocity with p'
                   */
                 u_error_x = 0.0;
+
+                
                 for (int i = 1; i < N - 1; i++) {
 
                     double u_prev = u_x[i];
@@ -1252,7 +1259,8 @@ int main() {
         /**
          * @brief Calculates the coefficients for the tridiagonal system of the wick temperature T
          */
-        #pragma omp parallel for
+
+        
         for (int i = 1; i < N - 1; i++) {
 
             const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density [kg/m3] of the central cell
@@ -1350,6 +1358,7 @@ int main() {
         /**
          * @brief Calculates the parabolas coefficients for each node
          */
+
         for (int i = 0; i < N; ++i) {
 
             std::array<std::array<double, 6>, 6> A{};             ///< Linear system matrix A
@@ -1571,7 +1580,7 @@ int main() {
 
             #pragma region momentum_predictor
 
-            #pragma omp parallel
+            
             for (int i = 1; i < N - 1; i++) {
 
                 const double rho_P = rho_v[i];                              ///< Density [kg/m3] of the central cell
@@ -1672,7 +1681,8 @@ int main() {
                 /**
                  * @brief Calculates the coefficients for the tridiagonal system of the pressure correction p'
                  */
-                #pragma omp parallel
+
+                
                 for (int i = 1; i < N - 1; i++) {
 
                     const double rho_P = rho_v[i];              ///< Density [kg/m3] of the central cell
@@ -1744,6 +1754,8 @@ int main() {
                   * @brief Corrects the pressure with p'
                   */
                 p_error_v = 0.0;
+
+                
                 for (int i = 0; i < N; i++) {
 
                     double p_prev = p_v[i];
@@ -1778,6 +1790,8 @@ int main() {
                   * @brief Corrects the velocity with p' and checks the sonic limit
                   */
                 u_error_v = 0.0;
+
+                
                 for (int i = 1; i < N - 1; i++) {
 
                     const double u_prev_v = u_v[i];
@@ -1936,7 +1950,7 @@ int main() {
         // Energy equation for T (implicit), upwind convection, central diffusion
         std::vector<double> aVT(N, 0.0), bVT(N, 0.0), cVT(N, 0.0), dVT(N, 0.0);
 
-        #pragma omp parallel
+        
         for (int i = 1; i < N - 1; i++) {
 
             const double rho_P = rho_v[i];                                          ///< Density [kg/m3] of the central cell
@@ -2204,6 +2218,9 @@ int main() {
     x_v_heat_flux_output.close();
 
     rho_output.close();
+
+    double end = omp_get_wtime();
+    printf("Execution time: %.6f s\n", end - start);
 
     return 0;
 }
