@@ -499,73 +499,6 @@ std::vector<double> solveTridiagonal(const std::vector<double>& a,
     return x;
 }
 
-using Vec6 = std::array<double, 6>;
-using Mat6x6 = std::array<std::array<double, 6>, 6>;
-
-/**
- * @brief Solves a 6x6 system of linear equations A*x = b using Gaussian elimination.
- *
- * This function applies Gaussian elimination with partial pivoting to transform the
- * augmented matrix [A|b] into an upper triangular form. It then solves for the
- * unknown vector 'x' using back substitution. The function works only for 6x6 systems.
- *
- * @param A The 6x6 coefficient matrix. This matrix is modified in-place
- * (transformed into an upper triangular matrix).
- * @param b The 6-element right-hand side vector. This vector is also modified
- * in-place to reflect the operations on A.
- * @return Vec6 The solution vector 'x' for the system A*x = b.
- * @throws std::runtime_error If the matrix A is singular (or near-singular,
- * meaning a pivot element is zero), preventing a unique solution.
- *
- * @note This implementation uses **partial pivoting** to ensure numerical stability
- * by selecting the largest absolute element in the current column below the
- * pivot as the pivot element.
- */
-static Vec6 solve6(Mat6x6 A, Vec6 b) {
-
-    const int N = 6;
-
-    for (int k = 0; k < N; ++k) {
-
-        int piv = k;
-        double mx = std::abs(A[k][k]);
-
-        for (int i = k + 1; i < N; ++i) {
-            double v = std::abs(A[i][k]);
-            if (v > mx) { mx = v; piv = i; }
-        }
-
-        if (mx == 0.0) { throw std::runtime_error("Singular matrix"); }
-
-        if (piv != k) {
-            std::swap(A[piv], A[k]);
-            std::swap(b[piv], b[k]);
-        }
-
-        double diag = A[k][k];
-
-        for (int j = k; j < N; ++j) A[k][j] /= diag;
-
-        b[k] /= diag;
-
-        for (int i = k + 1; i < N; ++i) {
-            double f = A[i][k];
-            if (f == 0.0) continue;
-            for (int j = k; j < N; ++j) A[i][j] -= f * A[k][j];
-            b[i] -= f * b[k];
-        }
-    }
-
-    Vec6 x{};
-    for (int i = N - 1; i >= 0; --i) {
-        double s = b[i];
-        for (int j = i + 1; j < N; ++j) s -= A[i][j] * x[j];
-        x[i] = s;
-    }
-
-    return x;
-}
-
 /**
  * @brief Generate N linearly spaced values from T_min to T_max.
  * @param T_min start value.
@@ -756,7 +689,7 @@ int main() {
     const double T_env = 280.0;             ///< External environmental temperature [K]
 
     // Geometric parameters
-    const int N = 100;                                                          ///< Number of axial nodes [-]
+    const int N = 5;                                                         ///< Number of axial nodes [-]
     const double L = 0.982; 			                                        ///< Length of the heat pipe [m]
     const double dz = L / N;                                                    ///< Axial discretization step [m]
     const double evaporator_length = 0.502;                                     ///< Evaporator length [m]
@@ -1414,15 +1347,13 @@ int main() {
          */
         std::array<std::array<double, 6>, N> ABC{};
 
-        std::array<std::array<double, 6>, N> ABC_theory{};
-
         /**
          * @brief Calculates the parabolas coefficients for each node
          */
         for (int i = 0; i < N; ++i) {
 
-            Mat6x6 A{};             ///< Linear system matrix A
-            Vec6 B{};               ///< Linear system vector B
+            std::array<std::array<double, 6>, 6> A{};             ///< Linear system matrix A
+            std::array<double, 6> B{};               ///< Linear system vector B
 
             const double eps_s = 0.4;                                           ///< Surface fraction of the wick available for phasic interface [-]
             const double beta = 1.0 / std::sqrt(2 * M_PI * Rv * T_x_v[i]);      ///< Mass transfer parameter beta [s/m]
@@ -1529,42 +1460,27 @@ int main() {
             const double k_int_x = liquid_sodium::k(T_w_x[i]);
             const double k_bulk_w = steel::k(T_w_bulk[i]);
 
-            ABC_theory[i][5] = (-q_o_w[i]
-                + 2 * ((T_x_bulk[i] - T_w_bulk[i] + q_o_w[i] * (Eio1 - r_interface) / k_bulk_w - Evi1 / (Ex4 - Evi1 * Ex3)) / (2 * r_outer * (Eio1 - r_inner) + r_inner * r_inner - Eio2)) * k_int_w * (r_outer - r_inner)
-                + k_int_x * (Ex8 + Ex6 * T_v_bulk[i] + Ex7 * dPg - Ex3 * T_x_bulk[i]) / (Ex4 - Evi1 * Ex3)) /
-                (2 * (r_interface - r_outer) * k_int_w * (r_interface * r_interface + (Evi1 * (Ex5 - Evi2 * Ex3)) / (Ex4 - Evi1 * Ex3)) / (2 * r_outer * (Eio1 - r_inner) + r_inner * r_inner - Eio2)
-                    + k_int_x * (Ex5 - Evi2 * Ex3) / (Ex4 - Evi1 * Ex3) - 2 * r_interface * k_int_x);
+            const double alpha = 1.0 / (2 * r_outer * (Eio1 - r_interface) + r_interface * r_interface - Eio2);
+            const double delta = T_x_bulk[i] - T_w_bulk[i] + q_o_w[i] / k_bulk_w * (Eio1 - r_interface) - (Evi1 - r_interface) * (Ex8 + Ex6 * T_v_bulk[i] + Ex7 * dPg - Ex3 * T_x_bulk[i]) / (Ex4 - Evi1 * Ex3);
+            const double gamma = r_interface * r_interface + ((Ex5 - Evi2 * Ex3) * (Evi1 - r_interface)) / (Ex4 - Evi1 * Ex3) - Evi2;
 
-            ABC_theory[i][2] = (T_x_bulk[i] - T_w_bulk[i] + q_o_w[i] * (Eio1 - r_interface) / k_bulk_w - Evi1 / (Ex4 - Evi1 * Ex3)
-                + ABC_theory[i][5] * (r_interface * r_interface + Evi1 * (Ex5 - Evi2 * Ex3) / (Ex4 - Evi1 * Ex3)))
-                / (2 * r_outer * (Eio1 - r_interface) + r_interface * r_interface - Eio2); // OK
+            ABC[i][5] = (-q_o_w[i] * k_int_w / k_bulk_w +
+                2 * k_int_w * (r_outer - r_interface) * alpha * delta +
+                k_int_x * (Ex6 * T_v_bulk[i] + Ex7 * dPg + Ex8 - Ex3 * T_x_bulk[i]) / (Ex4 - Evi1 * Ex3))
+                /
+                (2 * (r_interface - r_outer) * k_int_w * alpha * gamma +
+                    (Ex5 - Evi2 * Ex3) / (Ex4 - Evi1 * Ex3) * k_int_x -
+                    2 * r_interface * k_int_x);
 
-            ABC_theory[i][1] = q_o_w[i] / k_bulk_w - 2 * r_outer * ABC_theory[i][2]; // OK
+            ABC[i][2] = alpha * (delta + gamma * ABC[i][5]);
 
-            ABC_theory[i][0] = T_w_bulk[i] - Eio1 * q_o_w[i] / k_bulk_w + (2 * r_outer * Eio1 - Eio2) * ABC_theory[i][2]; // OK
+            ABC[i][1] = q_o_w[i] / k_bulk_w - 2 * r_outer * ABC[i][2]; // OK
 
-            ABC_theory[i][4] = (Ex8 + T_v_bulk[i] * Ex6 + Ex7 * dPg - Ex3 * T_x_bulk[i] - (Ex5 - Evi2 * Ex3) * ABC_theory[i][5]) / (Ex4 - Evi1 * Ex3); // OK
+            ABC[i][0] = T_w_bulk[i] - Eio1 * q_o_w[i] / k_bulk_w + (2 * r_outer * Eio1 - Eio2) * ABC[i][2]; // OK
 
-            ABC_theory[i][3] = T_x_bulk[i] - Evi1 * ABC_theory[i][4] - Evi2 * ABC_theory[i][5]; // OK
+            ABC[i][4] = (Ex8 + T_v_bulk[i] * Ex6 + Ex7 * dPg - Ex3 * T_x_bulk[i] - (Ex5 - Evi2 * Ex3) * ABC[i][5]) / (Ex4 - Evi1 * Ex3); // OK
 
-
-            // LHS matrix A 6x6
-            A[0] = { 1.0, Eio1, Eio2, 0.0, 0.0, 0.0 };
-            A[1] = { 0.0, 0.0,    0.0,    1.0, Evi1, Evi2 };
-            A[2] = { 1.0, r_interface,  r_interface * r_interface, -1.0, -r_interface, -r_interface * r_interface };
-            A[3] = { 0.0, k_int_w,  2.0 * r_interface * k_int_w, 0.0, -k_int_x, -2.0 * r_interface * k_int_x };
-            A[4] = { 0.0, 1.0,    2.0 * r_outer, 0.0, 0.0, 0.0 };
-            A[5] = { 0.0, 0.0,    0.0,       Ex3, Ex4, Ex5 };
-
-            // RHS vector B
-            B[0] = T_w_bulk[i];                                    // row1: [0 1 0 0 0]
-            B[1] = T_x_bulk[i];                                    // row2: [0 0 1 0 0]
-            B[2] = 0.0;                                            // row3: [0 0 0 0 0]
-            B[3] = 0.0;                                            // row4: [0 0 0 0 0]
-            B[4] = q_o_w[i] / k_bulk_w;               // row5: [q''/kw 0 0 0 0]
-            B[5] = Ex6 * T_v_bulk[i] + Ex7 * dPg + Ex8;            // row6: [Ex8 0 0 Ex6 Ex7]
-
-            ABC[i] = solve6(A, B); ///< Returns [a_w, b_w, c_w, a_x, b_x, c_x]
+            ABC[i][3] = T_x_bulk[i] - Evi1 * ABC[i][4] - Evi2 * ABC[i][5]; // OK
 
             // Update temperatures at the interfaces
             T_o_w[i] = ABC[i][0] + ABC[i][1] * r_outer + ABC[i][2] * r_outer * r_outer;             ///< Temperature at the outer wall
@@ -1587,7 +1503,7 @@ int main() {
             q_x_v_wick[i] = liquid_sodium::k(T_x_v[i]) * (ABC[i][4] + 2.0 * ABC[i][5] * r_inner);           // Heat flux across wick-vapor interface (positive if to vapor)
             q_x_v_vapor[i] = vapor_sodium::k(T_x_v[i], p_v[i]) * (ABC[i][4] + 2.0 * ABC[i][5] * r_inner);   // Heat flux across wick-vapor interface (positive if to vapor)
 
-            Q_mass[i] = 0/*Gamma_xv[i] * (h_xv_v - h_xv_v)*/;  ///< Volumetric heat source [W/m3] due to evaporation/condensation (to be added to the wick and subtracted to the vapor)
+            Q_mass[i] = Gamma_xv[i] * (h_xv_v - h_xv_v);  ///< Volumetric heat source [W/m3] due to evaporation/condensation (to be added to the wick and subtracted to the vapor)
 
             DEBUG_POINT();
         }
