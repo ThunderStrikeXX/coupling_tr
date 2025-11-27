@@ -2044,9 +2044,9 @@ int main() {
                 x_v_heat_flux_output << q_w_x_wick[i] << " ";
 
                 rho_output << rho_v[i] << " ";
-
-                time_output << output_every * n * dt;
             }
+
+            time_output << output_every * n * dt << " ";
 
             v_velocity_output << "\n";
             v_pressure_output << "\n";
