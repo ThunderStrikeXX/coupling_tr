@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <filesystem>
+#include <string>
 
 bool warnings = false;
 
@@ -693,7 +694,7 @@ int main() {
     double Omega = 1.0;
 
     // Geometric parameters
-    const int N = 200;                                                         ///< Number of axial nodes [-]
+    const int N = 200;                                                          ///< Number of axial nodes [-]
     const double L = 0.982; 			                                        ///< Length of the heat pipe [m]
     const double dz = L / N;                                                    ///< Axial discretization step [m]
     const double evaporator_length = 0.502;                                     ///< Evaporator length [m]
@@ -702,21 +703,21 @@ int main() {
     const double evaporator_nodes = std::floor(evaporator_length / dz);         ///< Number of evaporator nodes
     const double condenser_nodes = std::ceil(condenser_length / dz);            ///< Number of condenser nodes
     const double adiabatic_nodes = N - (evaporator_nodes + condenser_nodes);    ///< Number of adiabatic nodes
-    const double r_o = 0.01335;                                             ///< Outer wall radius [m]
-    const double r_w = 0.0112;                                          ///< Wall-wick interface radius [m]
+    const double r_o = 0.01335;                                                 ///< Outer wall radius [m]
+    const double r_w = 0.0112;                                                  ///< Wall-wick interface radius [m]
     const double r_inner = 0.01075;                                             ///< Vapor-wick interface radius [m]
 
     // Surfaces 
-    const double A_w_outer = 2 * M_PI * r_o * dz;                                       ///< Wall radial area (at r_o) [m^2]
-    const double A_w_cross = M_PI * (r_o * r_o - r_w * r_w);        ///< Wall cross-sectional area [m^2]
-    const double A_x_interface = 2 * M_PI * r_w * dz;                               ///< Wick radial area (at r_w) [m^2]
+    const double A_w_outer = 2 * M_PI * r_o * dz;                           ///< Wall radial area (at r_o) [m^2]
+    const double A_w_cross = M_PI * (r_o * r_o - r_w * r_w);                ///< Wall cross-sectional area [m^2]
+    const double A_x_interface = 2 * M_PI * r_w * dz;                       ///< Wick radial area (at r_w) [m^2]
     const double A_x_cross = M_PI * (r_w * r_w - r_inner * r_inner);        ///< Wick cross-sectional area [m^2]
-    const double A_v_inner = 2 * M_PI * r_inner * dz;                                       ///< Vapor radial area (at r_inner) [m^2]
-    const double A_v_cross = M_PI * r_inner * r_inner;                                      ///< Vapor cross-sectional area [m^2]
+    const double A_v_inner = 2 * M_PI * r_inner * dz;                       ///< Vapor radial area (at r_inner) [m^2]
+    const double A_v_cross = M_PI * r_inner * r_inner;                      ///< Vapor cross-sectional area [m^2]
 
     // Time-stepping parameters
     double dt = 5e-8;                               ///< Initial time step [s] (then it is updated according to the limits)
-    const int nSteps = 1000000000;                          ///< Number of timesteps
+    const int nSteps = 1000000000;                  ///< Number of timesteps
     const double time_total = nSteps * dt;          ///< Total simulation time [s]
 
     // Wick permeability parameters
@@ -724,13 +725,13 @@ int main() {
     const double CF = 1e5;                          ///< Forchheimer coefficient [1/m]
 
     // PISO Wick parameters
-    const int tot_outer_iter_x = 2000;             ///< Outer iterations per time-step [-]
+    const int tot_outer_iter_x = 2000;              ///< Outer iterations per time-step [-]
     const int tot_inner_iter_x = 100;               ///< Inner iterations per outer iteration [-]
     const double outer_tol_x = 1e-6;                ///< Tolerance for the outer iterations (velocity) [-]
     const double inner_tol_x = 1e-6;                ///< Tolerance for the inner iterations (pressure) [-]
 
     // PISO Vapor parameters
-    const int tot_outer_iter_v = 1000;             ///< Outer iterations per time-step [-]
+    const int tot_outer_iter_v = 1000;              ///< Outer iterations per time-step [-]
     const int tot_inner_iter_v = 100;               ///< Inner iterations per outer iteration [-]
     const double outer_tol_v = 1e-4;                ///< Tolerance for the outer iterations (velocity) [-]
     const double inner_tol_v = 1e-4;                ///< Tolerance for the inner iterations (pressure) [-]
@@ -753,22 +754,6 @@ int main() {
     std::vector<double> T_x_bulk(N, T_full);
     std::vector<double> T_x_v(N, T_full);
     std::vector<double> T_v_bulk(N, T_full);
-
-    //// Initial values for the temperatures distributions
-    //double T_o_w_min = 875.0, T_o_w_max = 1100.0;               ///< Extremes for the outer wall initial temperature [K]
-    //double T_w_min = 880.0, T_w_max = 1095.0;                   ///< Extremes for the wall bulk initial temperature [K]
-    //double T_w_x_min = 885.0, T_w_x_max = 1090.0;               ///< Extremes for the wall wick interface initial temperature [K]
-    //double T_x_min = 890.0, T_x_max = 1085.0;                   ///< Extremes for the wick bulk initial temperature [K]
-    //double T_x_v_min = 895.0, T_x_v_max = 1080.0;               ///< Extremes for the wick vapor initial temperature [K]
-    //double T_v_min = 900.0, T_v_max = 1075.0;                   ///< Extremes for the vapor bulk initial temperature [K]
-
-    //// Initialization of the initial temperatures using the extremes in a linear distribution
-    //std::vector<double> T_o_w = linspace(T_o_w_max, T_o_w_min, N);
-    //std::vector<double> T_w_bulk = linspace(T_w_max, T_w_min, N);
-    //std::vector<double> T_w_x = linspace(T_w_x_max, T_w_x_min, N);
-    //std::vector<double> T_x_bulk = linspace(T_x_max, T_x_min, N);
-    //std::vector<double> T_x_v = linspace(T_x_v_max, T_x_v_min, N);
-    //std::vector<double> T_v_bulk = linspace(T_v_max, T_v_min, N);
 
     // Old temperature variables
     std::vector<double> T_x_v_old = T_x_v;
@@ -872,60 +857,74 @@ int main() {
     double total_mass = 0;
 
     // Create result folder
-    std::filesystem::create_directories("results");
-
-    // Print results in file
-    std::ofstream mesh_io("mesh.txt", std::ios::trunc);
-
-    std::ofstream v_velocity_output("results/vapor_velocity.txt", std::ios::trunc);
-    std::ofstream v_pressure_output("results/vapor_pressure.txt", std::ios::trunc);
-    std::ofstream v_bulk_temperature_output("results/vapor_bulk_temperature.txt", std::ios::trunc);
-
-    std::ofstream x_velocity_output("results/wick_velocity.txt", std::ios::trunc);
-    std::ofstream x_pressure_output("results/wick_pressure.txt", std::ios::trunc);
-    std::ofstream x_bulk_temperature_output("results/wick_bulk_temperature.txt", std::ios::trunc);
-
-    std::ofstream x_v_temperature_output("results/wick_vapor_interface_temperature.txt", std::ios::trunc);
-    std::ofstream w_x_temperature_output("results/wall_wick_interface_temperature.txt", std::ios::trunc);
-    std::ofstream o_w_temperature_output("results/outer_wall_temperature.txt", std::ios::trunc);
-    std::ofstream w_bulk_temperature_output("results/wall_bulk_temperature.txt", std::ios::trunc);
-
-    std::ofstream x_v_mass_flux_output("results/wick_vapor_mass_source.txt", std::ios::trunc);
-
-    std::ofstream o_w_heat_flux_output("results/outer_wall_heat_flux.txt", std::ios::trunc);
-    std::ofstream w_x_heat_flux_output("results/wall_wick_heat_flux.txt", std::ios::trunc);
-    std::ofstream x_v_heat_flux_output("results/wick_vapor_heat_flux.txt", std::ios::trunc);
-
-    std::ofstream rho_output("results/rho_vapor.txt", std::ios::trunc);
-
-    mesh_io << std::setprecision(8);
-
-    v_velocity_output << std::setprecision(8);
-    v_pressure_output << std::setprecision(8);
-    v_bulk_temperature_output << std::setprecision(8);
-
-    x_velocity_output << std::setprecision(8);
-    x_pressure_output << std::setprecision(8);
-    x_bulk_temperature_output << std::setprecision(8);
-
-    x_v_temperature_output << std::setprecision(8);
-    w_x_temperature_output << std::setprecision(8);
-    o_w_temperature_output << std::setprecision(8);
-    w_bulk_temperature_output << std::setprecision(8);
-
-    x_v_mass_flux_output << std::setprecision(8);
-
-    o_w_heat_flux_output << std::setprecision(8);
-    w_x_heat_flux_output << std::setprecision(8);
-    x_v_heat_flux_output << std::setprecision(8);
-
-    rho_output << std::setprecision(8);
-
-    for (int i = 0; i < N; ++i) {
-        mesh_io << i * dz << " ";
+    int new_case = 0;
+    std::string name = "case_0";
+    while (true) {
+        std::string name = "case_" + std::to_string(new_case);
+        if (!std::filesystem::exists(name)) {
+            std::filesystem::create_directory(name);
+            break;
+        }
+        new_case++;
     }
 
-    mesh_io.flush();
+    // Print results in file
+    std::ofstream mesh_output(name + "/mesh.txt", std::ios::trunc);
+    std::ofstream time_output(name + "/time.txt", std::ios::trunc);
+
+    std::ofstream v_velocity_output(name + "/vapor_velocity.txt", std::ios::trunc);
+    std::ofstream v_pressure_output(name + "/vapor_pressure.txt", std::ios::trunc);
+    std::ofstream v_bulk_temperature_output(name + "/vapor_bulk_temperature.txt", std::ios::trunc);
+
+    std::ofstream x_velocity_output(name + "/wick_velocity.txt", std::ios::trunc);
+    std::ofstream x_pressure_output(name + "/wick_pressure.txt", std::ios::trunc);
+    std::ofstream x_bulk_temperature_output(name + "/wick_bulk_temperature.txt", std::ios::trunc);
+
+    std::ofstream x_v_temperature_output(name + "/wick_vapor_interface_temperature.txt", std::ios::trunc);
+    std::ofstream w_x_temperature_output(name + "/wall_wick_interface_temperature.txt", std::ios::trunc);
+    std::ofstream o_w_temperature_output(name + "/outer_wall_temperature.txt", std::ios::trunc);
+    std::ofstream w_bulk_temperature_output(name + "/wall_bulk_temperature.txt", std::ios::trunc);
+
+    std::ofstream x_v_mass_flux_output(name + "/wick_vapor_mass_source.txt", std::ios::trunc);
+
+    std::ofstream o_w_heat_flux_output(name + "/outer_wall_heat_flux.txt", std::ios::trunc);
+    std::ofstream w_x_heat_flux_output(name + "/wall_wick_heat_flux.txt", std::ios::trunc);
+    std::ofstream x_v_heat_flux_output(name + "/wick_vapor_heat_flux.txt", std::ios::trunc);
+
+    std::ofstream rho_output(name + "/rho_vapor.txt", std::ios::trunc);
+
+    const int global_precision = 4;
+
+    mesh_output << std::setprecision(global_precision);
+    time_output << std::setprecision(global_precision);
+
+    v_velocity_output << std::setprecision(global_precision);
+    v_pressure_output << std::setprecision(global_precision);
+    v_bulk_temperature_output << std::setprecision(global_precision);
+
+    x_velocity_output << std::setprecision(global_precision);
+    x_pressure_output << std::setprecision(global_precision);
+    x_bulk_temperature_output << std::setprecision(global_precision);
+
+    x_v_temperature_output << std::setprecision(global_precision);
+    w_x_temperature_output << std::setprecision(global_precision);
+    o_w_temperature_output << std::setprecision(global_precision);
+    w_bulk_temperature_output << std::setprecision(global_precision);
+
+    x_v_mass_flux_output << std::setprecision(global_precision);
+
+    o_w_heat_flux_output << std::setprecision(global_precision);
+    w_x_heat_flux_output << std::setprecision(global_precision);
+    x_v_heat_flux_output << std::setprecision(global_precision);
+
+    rho_output << std::setprecision(global_precision);
+
+    for (int i = 0; i < N; ++i) {
+        mesh_output << i * dz << " ";
+    }
+
+    mesh_output.flush();
+    mesh_output.close();
 
     #pragma endregion
 
@@ -2020,66 +2019,9 @@ int main() {
 
         #pragma region output
 
-        // Output in file
-        //if (true) {
+        const int output_every = 100000;
 
-        //    std::cout << "Temperature outer wall: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_o_w[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Temperature bulk wall: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_w_bulk[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Temperature wall-wick: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_w_x[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Temperature wick bulk: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_x_bulk[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Temperature wick vapor: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_x_v[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Temperature vapor bulk: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << T_v_bulk[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Pressure liquid: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << p_x[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Velocity liquid: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << u_x[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Pressure vapor: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << p_v[ix] << ", ";
-        //    } std::cout << "\n";
-
-        //    std::cout << "Velocity vapor: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << u_v[ix] << ", ";
-        //    } std::cout << "\n\n";
-
-        //    std::cout << "Mass flux: \n";
-        //    for (int ix = 0; ix < N; ++ix) {
-        //        std::cout << Gamma_xv[ix] << ", ";
-        //    } std::cout << "\n\n";
-        //}
-
-        if(n % 10000 == 0){
+        if(n % output_every == 0){
             for (int i = 0; i < N; ++i) {
 
                 v_velocity_output << u_v[i] << " ";
@@ -2102,6 +2044,8 @@ int main() {
                 x_v_heat_flux_output << q_w_x_wick[i] << " ";
 
                 rho_output << rho_v[i] << " ";
+
+                time_output << output_every * n * dt;
             }
 
             v_velocity_output << "\n";
@@ -2145,29 +2089,14 @@ int main() {
             x_v_heat_flux_output.flush();
 
             rho_output.flush();
-        }
 
-        /*system("python plot_data.py mesh.txt "
-            "results/vapor_velocity.txt "
-            "results/vapor_bulk_temperature.txt "
-            "results/vapor_pressure.txt "
-            "results/wick_velocity.txt "
-            "results/wick_bulk_temperature.txt "
-            "results/wick_pressure.txt "
-            "results/wall_bulk_temperature.txt "
-            "results/outer_wall_temperature.txt "
-            "results/wall_wick_interface_temperature.txt "
-            "results/wick_vapor_interface_temperature.txt "
-            "results/outer_wall_heat_flux.txt "
-            "results/wall_wick_heat_flux.txt "
-            "results/wick_vapor_heat_flux.txt "
-            "results/wick_vapor_mass_source.txt "
-            "results/rho_vapor.txt");*/
+            time_output.flush();
+        }
 
         #pragma endregion
     }
 
-    mesh_io.close();
+    time_output.close();
 
     v_velocity_output.close();
     v_pressure_output.close();
