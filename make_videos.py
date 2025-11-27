@@ -3,42 +3,58 @@ import matplotlib.pyplot as plt
 import os
 import subprocess
 
-# ==============================================================
-# Configuration
-# ==============================================================
-x_file = "mesh.txt"
-data_dir = "results"
-video_dir = "videos"
-duration_s = 10          # total video duration [s]
-max_frames = 200         # limit to this many frames per video
-dpi = 100                # lower = faster
-os.makedirs(video_dir, exist_ok=True)
+# --------------------------------------------------------------
+# Select case
+# --------------------------------------------------------------
+cases = [d for d in os.listdir(".") if os.path.isdir(d) and "case" in d]
 
-# ==============================================================
-# Load X data
-# ==============================================================
+print("Available cases:")
+for i, c in enumerate(cases):
+    print(i, c)
+
+idx = int(input("Select case index: "))
+case = cases[idx]
+
+case_dir = case                      # data lives directly here
+x_file = os.path.join(case_dir, "mesh.txt")
+
+# --------------------------------------------------------------
+# Output folder videos_n
+# --------------------------------------------------------------
+out_root = "videos"
+os.makedirs(out_root, exist_ok=True)
+
+n = 0
+while True:
+    out_dir = os.path.join(out_root, f"videos_{n}")
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
+        break
+    n += 1
+
+# --------------------------------------------------------------
+duration_s = 10
+max_frames = 200
+dpi = 100
+
 x = np.loadtxt(x_file)
 
-# ==============================================================
-# Collect data files
-# ==============================================================
-y_files = [f for f in os.listdir(data_dir)
-           if f.endswith(".txt") and f.lower() != "mesh.txt"]
+# All .txt files in the case directory except mesh
+y_files = [
+    f for f in os.listdir(case_dir)
+    if f.endswith(".txt") and f.lower() != "mesh.txt"
+]
 
-# ==============================================================
-# Process each file
-# ==============================================================
 for fname in y_files:
-    path = os.path.join(data_dir, fname)
+    path = os.path.join(case_dir, fname)
     print(f"Processing {fname}...")
 
     y = np.loadtxt(path)
     if y.ndim == 1:
-        print(f"  Skipped: single line file")
+        print("  Skipped (not matrix)")
         continue
 
     n_frames_total, n_points = y.shape
-    # Downsample frames uniformly if too many
     if n_frames_total > max_frames:
         step = int(np.ceil(n_frames_total / max_frames))
         y = y[::step, :]
@@ -48,11 +64,9 @@ for fname in y_files:
 
     fps = n_frames / duration_s
 
-    # Temporary folder for PNGs
-    tmp_dir = os.path.join(video_dir, "_tmp_" + os.path.splitext(fname)[0])
+    tmp_dir = os.path.join(out_dir, "_tmp_" + os.path.splitext(fname)[0])
     os.makedirs(tmp_dir, exist_ok=True)
 
-    # --- Generate reduced set of frames ---
     for i in range(n_frames):
         plt.figure(figsize=(7, 4))
         plt.plot(x, y[i, :], lw=2)
@@ -66,8 +80,7 @@ for fname in y_files:
         plt.savefig(out_png, dpi=dpi)
         plt.close()
 
-    # --- Assemble video with ffmpeg ---
-    out_mp4 = os.path.join(video_dir, os.path.splitext(fname)[0] + ".mp4")
+    out_mp4 = os.path.join(out_dir, os.path.splitext(fname)[0] + ".mp4")
     ffmpeg_cmd = [
         "ffmpeg", "-y",
         "-framerate", f"{fps:.2f}",
@@ -77,11 +90,10 @@ for fname in y_files:
     ]
     subprocess.run(ffmpeg_cmd, check=True)
 
-    # --- Cleanup temporary images ---
     for f in os.listdir(tmp_dir):
         os.remove(os.path.join(tmp_dir, f))
     os.rmdir(tmp_dir)
 
-    print(f"  Saved -> {out_mp4}")
+    print("  Saved ->", out_mp4)
 
-print("All videos created successfully.")
+print("Done.")
