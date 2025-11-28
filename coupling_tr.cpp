@@ -526,11 +526,11 @@ double new_dt_w(double dz, double dt_old,
     const std::vector<double>& T,
     const std::vector<double>& St) {
 
-    const double CFo = 0.5, CS = 0.5;           ///< Limit coefficients
-    const double epsS = 1e-12;                  ///< This is to prevent divisions by zero (e.g. if the source is zero)
-    const double theta = 0.9;                   ///< Adjusting coefficient for the timestep candidate 
-    const double rdown = 0.2;                   ///< Coefficient for damping the timestep correction
-    const double dt_min = 1e-12, dt_max = 1e-3; ///< Timestep boundaries [s]
+    const double CFo = 0.5, CS = 0.5;           /// Limit coefficients
+    const double epsS = 1e-12;                  /// This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                   /// Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                   /// Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e-3; /// Timestep boundaries [s]
 
     int N = St.size();
 
@@ -569,11 +569,11 @@ double new_dt_x(double dz, double dt_old,
     const std::vector<double>& T,
     const std::vector<double>& Sm) {
 
-    const double CFL = 0.5, CS = 0.5;                  ///< Limit coefficients
-    const double epsS = 1e-12;                         ///< This is to prevent divisions by zero (e.g. if the source is zero)
-    const double theta = 0.9;                          ///< Adjusting coefficient for the timestep candidate 
-    const double rdown = 0.2;                          ///< Coefficient for damping the timestep correction
-    const double dt_min = 1e-12, dt_max = 1e-3;        ///< Timestep boundaries [s]
+    const double CFL = 0.5, CS = 0.5;                  /// Limit coefficients
+    const double epsS = 1e-12;                         /// This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                          /// Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                          /// Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e-3;        /// Timestep boundaries [s]
 
     int N = u.size();
 
@@ -613,13 +613,13 @@ double new_dt_v(double dz, double dt_old,
     const std::vector<double>& Sm,
     const std::vector<double>& bVU) {
 
-    const double gamma = 1.32;                          ///< Vapor sodium gas constant [-]
-    const double Rv = 361.8;                            ///< Gas constant for the sodium vapor [J/(kg K)]
-    const double CFL = 0.5, CS = 0.5, CP = 0.5;         ///< Limit coefficients
-    const double epsS = 1e-12;                          ///< This is to prevent divisions by zero (e.g. if the source is zero)
-    const double theta = 0.9;                           ///< Adjusting coefficient for the timestep candidate 
-    const double rdown = 0.2;                           ///< Coefficient for damping the timestep correction
-    const double dt_min = 1e-12, dt_max = 1e3;          ///< Timestep boundaries [s]
+    const double gamma = 1.32;                          /// Vapor sodium gas constant [-]
+    const double Rv = 361.8;                            /// Gas constant for the sodium vapor [J/(kg K)]
+    const double CFL = 0.5, CS = 0.5, CP = 0.5;         /// Limit coefficients
+    const double epsS = 1e-12;                          /// This is to prevent divisions by zero (e.g. if the source is zero)
+    const double theta = 0.9;                           /// Adjusting coefficient for the timestep candidate 
+    const double rdown = 0.2;                           /// Coefficient for damping the timestep correction
+    const double dt_min = 1e-12, dt_max = 1e3;          /// Timestep boundaries [s]
 
     int N = u.size();
     auto invb = [&](int i) { return 1.0 / std::max(bVU[i], 1e-30); };
@@ -678,74 +678,74 @@ int main() {
     const double M_PI = 3.14159265358979323846;
 
     // Physical properties
-    const double emissivity = 0.9;          ///< Wall emissivity [-]
-    const double sigma = 5.67e-8;           ///< Stefan-Boltzmann constant [W/m^2/K^4]
-    const double Rv = 361.8;                ///< Gas constant for the sodium vapor [J/(kg K)]
-    const double Pr_t = 0.01;               ///< Prandtl turbulent number for sodium vapor [-]
-    const double gamma = 1.66;              ///< TODO: MAKE THIS PROPERTY TEMPERATURE DEPENDENT Ratio between constant pressure specific heat and constant volume specific heat [-] 
+    const double emissivity = 0.9;          /// Wall emissivity [-]
+    const double sigma = 5.67e-8;           /// Stefan-Boltzmann constant [W/m^2/K^4]
+    const double Rv = 361.8;                /// Gas constant for the sodium vapor [J/(kg K)]
+    const double Pr_t = 0.01;               /// Prandtl turbulent number for sodium vapor [-]
+    const double gamma = 1.66;              /// TODO: MAKE THIS PROPERTY TEMPERATURE DEPENDENT Ratio between constant pressure specific heat and constant volume specific heat [-] 
 
     // Environmental boundary conditions
-    const double h_conv = 10;               ///< Convective heat transfer coefficient for external heat removal [W/m^2/K]
-    const double power = 1e3;               ///< Power at the evaporator side [W]
-    const double T_env = 280.0;             ///< External environmental temperature [K]
+    const double h_conv = 10;               /// Convective heat transfer coefficient for external heat removal [W/m^2/K]
+    const double power = 1e3;               /// Power at the evaporator side [W]
+    const double T_env = 280.0;             /// External environmental temperature [K]
 
     // Evaporation and condensation parameters
-    const double eps_s = 1.0;                                           ///< Surface fraction of the wick available for phasic interface [-]
-    const double sigma_e = 1.0;                                         ///< Evaporation accomodation coefficient [-]. 1 means optimal evaporation
-    const double sigma_c = 1.0;                                         ///< Condensation accomodation coefficient [-]. 1 means optimal condensation
+    const double eps_s = 1.0;                                           /// Surface fraction of the wick available for phasic interface [-]
+    const double sigma_e = 1.0;                                         /// Evaporation accomodation coefficient [-]. 1 means optimal evaporation
+    const double sigma_c = 1.0;                                         /// Condensation accomodation coefficient [-]. 1 means optimal condensation
     double Omega = 1.0;
 
     // Geometric parameters
-    const int N = 200;                                                          ///< Number of axial nodes [-]
-    const double L = 0.982; 			                                        ///< Length of the heat pipe [m]
-    const double dz = L / N;                                                    ///< Axial discretization step [m]
-    const double evaporator_length = 0.502;                                     ///< Evaporator length [m]
-    const double adiabatic_length = 0.188;                                      ///< Adiabatic length [m]
-    const double condenser_length = 0.292;                                      ///< Condenser length [m]
-    const double evaporator_nodes = std::floor(evaporator_length / dz);         ///< Number of evaporator nodes
-    const double condenser_nodes = std::ceil(condenser_length / dz);            ///< Number of condenser nodes
-    const double adiabatic_nodes = N - (evaporator_nodes + condenser_nodes);    ///< Number of adiabatic nodes
-    const double r_o = 0.01335;                                                 ///< Outer wall radius [m]
-    const double r_w = 0.0112;                                                  ///< Wall-wick interface radius [m]
-    const double r_inner = 0.01075;                                             ///< Vapor-wick interface radius [m]
+    const int N = 200;                                                          /// Number of axial nodes [-]
+    const double L = 0.982; 			                                        /// Length of the heat pipe [m]
+    const double dz = L / N;                                                    /// Axial discretization step [m]
+    const double evaporator_length = 0.502;                                     /// Evaporator length [m]
+    const double adiabatic_length = 0.188;                                      /// Adiabatic length [m]
+    const double condenser_length = 0.292;                                      /// Condenser length [m]
+    const double evaporator_nodes = std::floor(evaporator_length / dz);         /// Number of evaporator nodes
+    const double condenser_nodes = std::ceil(condenser_length / dz);            /// Number of condenser nodes
+    const double adiabatic_nodes = N - (evaporator_nodes + condenser_nodes);    /// Number of adiabatic nodes
+    const double r_o = 0.01335;                                                 /// Outer wall radius [m]
+    const double r_w = 0.0112;                                                  /// Wall-wick interface radius [m]
+    const double r_inner = 0.01075;                                             /// Vapor-wick interface radius [m]
 
     // Surfaces 
-    const double A_w_outer = 2 * M_PI * r_o * dz;                           ///< Wall radial area (at r_o) [m^2]
-    const double A_w_cross = M_PI * (r_o * r_o - r_w * r_w);                ///< Wall cross-sectional area [m^2]
-    const double A_x_interface = 2 * M_PI * r_w * dz;                       ///< Wick radial area (at r_w) [m^2]
-    const double A_x_cross = M_PI * (r_w * r_w - r_inner * r_inner);        ///< Wick cross-sectional area [m^2]
-    const double A_v_inner = 2 * M_PI * r_inner * dz;                       ///< Vapor radial area (at r_inner) [m^2]
-    const double A_v_cross = M_PI * r_inner * r_inner;                      ///< Vapor cross-sectional area [m^2]
+    const double A_w_outer = 2 * M_PI * r_o * dz;                           /// Wall radial area (at r_o) [m^2]
+    const double A_w_cross = M_PI * (r_o * r_o - r_w * r_w);                /// Wall cross-sectional area [m^2]
+    const double A_x_interface = 2 * M_PI * r_w * dz;                       /// Wick radial area (at r_w) [m^2]
+    const double A_x_cross = M_PI * (r_w * r_w - r_inner * r_inner);        /// Wick cross-sectional area [m^2]
+    const double A_v_inner = 2 * M_PI * r_inner * dz;                       /// Vapor radial area (at r_inner) [m^2]
+    const double A_v_cross = M_PI * r_inner * r_inner;                      /// Vapor cross-sectional area [m^2]
 
     // Time-stepping parameters
-    double dt = 5e-8;                               ///< Initial time step [s] (then it is updated according to the limits)
-    const int nSteps = 1000000000;                  ///< Number of timesteps
-    const double time_total = nSteps * dt;          ///< Total simulation time [s]
+    double dt = 5e-8;                               /// Initial time step [s] (then it is updated according to the limits)
+    const int nSteps = 1000000000;                  /// Number of timesteps
+    const double time_total = nSteps * dt;          /// Total simulation time [s]
 
     // Wick permeability parameters
-    const double K = 1e-10;                          ///< Permeability [m^2]
-    const double CF = 1e5;                          ///< Forchheimer coefficient [1/m]
+    const double K = 1e-10;                          /// Permeability [m^2]
+    const double CF = 1e5;                          /// Forchheimer coefficient [1/m]
 
     // PISO Wick parameters
-    const int tot_outer_iter_x = 2000;              ///< Outer iterations per time-step [-]
-    const int tot_inner_iter_x = 100;               ///< Inner iterations per outer iteration [-]
-    const double outer_tol_x = 1e-6;                ///< Tolerance for the outer iterations (velocity) [-]
-    const double inner_tol_x = 1e-6;                ///< Tolerance for the inner iterations (pressure) [-]
+    const int tot_outer_iter_x = 2000;              /// Outer iterations per time-step [-]
+    const int tot_inner_iter_x = 100;               /// Inner iterations per outer iteration [-]
+    const double outer_tol_x = 1e-6;                /// Tolerance for the outer iterations (velocity) [-]
+    const double inner_tol_x = 1e-6;                /// Tolerance for the inner iterations (pressure) [-]
 
     // PISO Vapor parameters
-    const int tot_outer_iter_v = 1000;              ///< Outer iterations per time-step [-]
-    const int tot_inner_iter_v = 100;               ///< Inner iterations per outer iteration [-]
-    const double outer_tol_v = 1e-4;                ///< Tolerance for the outer iterations (velocity) [-]
-    const double inner_tol_v = 1e-4;                ///< Tolerance for the inner iterations (pressure) [-]
+    const int tot_outer_iter_v = 1000;              /// Outer iterations per time-step [-]
+    const int tot_inner_iter_v = 100;               /// Inner iterations per outer iteration [-]
+    const double outer_tol_v = 1e-4;                /// Tolerance for the outer iterations (velocity) [-]
+    const double inner_tol_v = 1e-4;                /// Tolerance for the inner iterations (pressure) [-]
 
     // Mesh z positions
     std::vector<double> mesh(N, 0.0);
     for (int i = 0; i < N; ++i) mesh[i] = i * dz;
 
     // Node partition
-    const int N_e = static_cast<int>(std::floor(evaporator_length / dz));   ///< Number of nodes of the evaporator region [-]
-    const int N_c = static_cast<int>(std::ceil(condenser_length / dz));     ///< Number of nodes of the condenser region [-]
-    const int N_a = N - (N_e + N_c);                                        ///< Number of nodes of the adiabadic region [-]
+    const int N_e = static_cast<int>(std::floor(evaporator_length / dz));   /// Number of nodes of the evaporator region [-]
+    const int N_c = static_cast<int>(std::ceil(condenser_length / dz));     /// Number of nodes of the condenser region [-]
+    const int N_a = N - (N_e + N_c);                                        /// Number of nodes of the adiabadic region [-]
 
     const double T_full = 800.0;
 
@@ -763,46 +763,46 @@ int main() {
     std::vector<double> T_old_v = T_v_bulk;
 
     // Wick fields
-    std::vector<double> u_x(N, -0.000001);                                              ///< Wick velocity field [m/s]
-    std::vector<double> p_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               ///< Wick pressure field [Pa]
-    std::vector<double> p_prime_x(N, 0.0);                                          ///< Wick correction pressure field [Pa]
-    std::vector<double> p_old_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));           ///< Wick old pressure field [Pa]
-    std::vector<double> p_storage_x(N + 2, vapor_sodium::P_sat(T_x_v[N - 1]));      ///< Wick padded pressure vector for R&C correction [Pa]
-    double* p_padded_x = &p_storage_x[1];                                           ///< Poìnter to work on the wick pressure padded storage with the same indes
+    std::vector<double> u_x(N, -0.000001);                                              /// Wick velocity field [m/s]
+    std::vector<double> p_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               /// Wick pressure field [Pa]
+    std::vector<double> p_prime_x(N, 0.0);                                          /// Wick correction pressure field [Pa]
+    std::vector<double> p_old_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));           /// Wick old pressure field [Pa]
+    std::vector<double> p_storage_x(N + 2, vapor_sodium::P_sat(T_x_v[N - 1]));      /// Wick padded pressure vector for R&C correction [Pa]
+    double* p_padded_x = &p_storage_x[1];                                           /// Poìnter to work on the wick pressure padded storage with the same indes
 
     // Vapor fields
-    std::vector<double> u_v(N, 0.1);                                                ///< Vapor velocity field [m/s]
-    std::vector<double> p_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               ///< Vapor pressure field [Pa]
-    std::vector<double> rho_v(N, 8e-3);                                             ///< Vapor density field [Pa]
-    std::vector<double> p_prime_v(N, 0.0);                                          ///< Vapor correction pressure field [Pa]
-    std::vector<double> p_old_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));           ///< Vapor old pressure field [Pa]
-    std::vector<double> rho_old_v(N, 8e-3);                                         ///< Vapor old density field [Pa]
-    std::vector<double> u_old_v(N, 0.1);                                            ///< Vapor old velocity field [Pa]
-    std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_v_bulk[N - 1]));   ///< Vapor padded pressure vector for R&C correction [Pa]
-    double* p_padded_v = &p_storage_v[1];                                           ///< Poìnter to work on the storage with the same indes
+    std::vector<double> u_v(N, 0.1);                                                /// Vapor velocity field [m/s]
+    std::vector<double> p_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               /// Vapor pressure field [Pa]
+    std::vector<double> rho_v(N, 8e-3);                                             /// Vapor density field [Pa]
+    std::vector<double> p_prime_v(N, 0.0);                                          /// Vapor correction pressure field [Pa]
+    std::vector<double> p_old_v(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));           /// Vapor old pressure field [Pa]
+    std::vector<double> rho_old_v(N, 8e-3);                                         /// Vapor old density field [Pa]
+    std::vector<double> u_old_v(N, 0.1);                                            /// Vapor old velocity field [Pa]
+    std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_v_bulk[N - 1]));   /// Vapor padded pressure vector for R&C correction [Pa]
+    double* p_padded_v = &p_storage_v[1];                                           /// Poìnter to work on the storage with the same indes
 
     for (int i = 0; i < N; ++i) p_v[i] = vapor_sodium::P_sat(T_x_v[i]);
 
     // Wick BCs
-    const double u_inlet_x = 0.0;                                   ///< Wick inlet velocity [m/s]
-    const double u_outlet_x = 0.0;                                  ///< Wick outlet velocity [m/s]
-    double p_outlet_x = vapor_sodium::P_sat(T_x_v[N - 1]);          ///< Wick outlet pressure [Pa]
+    const double u_inlet_x = 0.0;                                   /// Wick inlet velocity [m/s]
+    const double u_outlet_x = 0.0;                                  /// Wick outlet velocity [m/s]
+    double p_outlet_x = vapor_sodium::P_sat(T_x_v[N - 1]);          /// Wick outlet pressure [Pa]
 
     // Vapor BCs
-    const double u_inlet_v = 0.0;                                   ///< Vapor inlet velocity [m/s]
-    const double u_outlet_v = 0.0;                                  ///< Vapor outlet velocity [m/s]
-    double p_outlet_v = vapor_sodium::P_sat(T_v_bulk[N - 1]);       ///< Vapor outlet pressure [Pa]
+    const double u_inlet_v = 0.0;                                   /// Vapor inlet velocity [m/s]
+    const double u_outlet_v = 0.0;                                  /// Vapor outlet velocity [m/s]
+    double p_outlet_v = vapor_sodium::P_sat(T_v_bulk[N - 1]);       /// Vapor outlet pressure [Pa]
 
     // Turbulence constants for sodium vapor (SST model)
-    const double I = 0.05;                                          ///< Turbulence intensity [-]
-    const double L_t = 0.07 * L;                                    ///< Turbulence length scale [m]
-    const double k0 = 1.5 * pow(I * u_inlet_v, 2);                  ///< Initial turbulent kinetic energy [m^2/s^2]
-    const double omega0 = sqrt(k0) / (0.09 * L_t);                  ///< Initial specific dissipation rate [1/s]
-    const double sigma_k = 0.85;                                    ///< k-equation turbulent Prandtl number [-]
-    const double sigma_omega = 0.5;                                 ///< ω-equation turbulent Prandtl number [-]
-    const double beta_star = 0.09;                                  ///< β* constant for SST model [-]
-    const double beta = 0.075;                                      ///< β constant for turbulence model [-]
-    const double alpha = 5.0 / 9.0;                                 ///< α blending coefficient for SST model [-]
+    const double I = 0.05;                                          /// Turbulence intensity [-]
+    const double L_t = 0.07 * L;                                    /// Turbulence length scale [m]
+    const double k0 = 1.5 * pow(I * u_inlet_v, 2);                  /// Initial turbulent kinetic energy [m^2/s^2]
+    const double omega0 = sqrt(k0) / (0.09 * L_t);                  /// Initial specific dissipation rate [1/s]
+    const double sigma_k = 0.85;                                    /// k-equation turbulent Prandtl number [-]
+    const double sigma_omega = 0.5;                                 /// ω-equation turbulent Prandtl number [-]
+    const double beta_star = 0.09;                                  /// β* constant for SST model [-]
+    const double beta = 0.075;                                      /// β constant for turbulence model [-]
+    const double alpha = 5.0 / 9.0;                                 /// α blending coefficient for SST model [-]
 
     // Turbulence fields for sodium vapor
     std::vector<double> k_turb(N, k0);
@@ -818,43 +818,43 @@ int main() {
 
         }; eos_update(rho_v, p_v, T_v_bulk);
 
-    const double q_pp_evaporator = power / (2 * M_PI * evaporator_length * r_o);     ///< Heat flux at evaporator from given power [W/m^2]
+    const double q_pp_evaporator = power / (2 * M_PI * evaporator_length * r_o);     /// Heat flux at evaporator from given power [W/m^2]
 
     // Heat fluxes at the interfaces [W/m^2]
-    std::vector<double> q_o_w(N, 0.0);           ///< Heat flux [W/m^2] across outer wall in wall region (positive if directed to wall)
-    std::vector<double> q_w_x_wall(N, 0.0);      ///< Heat flux [W/m^2] across wall-wick interface in the wall region (positive if directed to wick)
-    std::vector<double> q_w_x_wick(N, 0.0);      ///< Heat flux [W/m^2] across wall-wick interface in the wick region (positive if directed to wick)
-    std::vector<double> q_x_v_wick(N, 0.0);      ///< Heat flux [W/m^2] across wick-vapor interface in the wick region (positive if directed to vapor)
-    std::vector<double> q_x_v_vapor(N, 0.0);     ///< Heat flux [W/m^2] across wick-vapor interface in the vapor region (positive if directed to vapor)
+    std::vector<double> q_o_w(N, 0.0);           /// Heat flux [W/m^2] across outer wall in wall region (positive if directed to wall)
+    std::vector<double> q_w_x_wall(N, 0.0);      /// Heat flux [W/m^2] across wall-wick interface in the wall region (positive if directed to wick)
+    std::vector<double> q_w_x_wick(N, 0.0);      /// Heat flux [W/m^2] across wall-wick interface in the wick region (positive if directed to wick)
+    std::vector<double> q_x_v_wick(N, 0.0);      /// Heat flux [W/m^2] across wick-vapor interface in the wick region (positive if directed to vapor)
+    std::vector<double> q_x_v_vapor(N, 0.0);     /// Heat flux [W/m^2] across wick-vapor interface in the vapor region (positive if directed to vapor)
     
-    std::vector<double> Q_w(N, 0.0);             ///< Wall heat source [W/m3]
-    std::vector<double> Q_x(N, 0.0);             ///< Wick heat source [W/m3]
-    std::vector<double> Q_v(N, 0.0);             ///< Vapor heat source [W/m3]
+    std::vector<double> Q_w(N, 0.0);             /// Wall heat source [W/m3]
+    std::vector<double> Q_x(N, 0.0);             /// Wick heat source [W/m3]
+    std::vector<double> Q_v(N, 0.0);             /// Vapor heat source [W/m3]
 
-    std::vector<double> Q_mass_vapor(N, 0.0);    ///< Heat volumetric source [W/m3] due to evaporation condensation. To be summed to the vapor
-    std::vector<double> Q_mass_wick(N, 0.0);     ///< Heat volumetric source [W/m3] due to evaporation condensation. To be summed to the wick
+    std::vector<double> Q_mass_vapor(N, 0.0);    /// Heat volumetric source [W/m3] due to evaporation condensation. To be summed to the vapor
+    std::vector<double> Q_mass_wick(N, 0.0);     /// Heat volumetric source [W/m3] due to evaporation condensation. To be summed to the wick
 
     // Models
-    const int rhie_chow_on_off_x = 1;             ///< 0: no wick RC correction, 1: wick with RC correction
-    const int rhie_chow_on_off_v = 1;             ///< 0: no vapor RC correction, 1: vapor with RC correction
-    const int SST_model_turbulence_on_off = 0;    ///< 0: no vapor turbulence, 1: vapor with turbulence
+    const int rhie_chow_on_off_x = 1;             /// 0: no wick RC correction, 1: wick with RC correction
+    const int rhie_chow_on_off_v = 1;             /// 0: no vapor RC correction, 1: vapor with RC correction
+    const int SST_model_turbulence_on_off = 0;    /// 0: no vapor turbulence, 1: vapor with turbulence
 
     // Mass sources/fluxes
-    std::vector<double> phi_x_v(N, 0.0);            ///< Mass flux [kg/m2/s] at the wick-vapor interface (positive if evaporation)
-    std::vector<double> Gamma_xv_vapor(N, 0.0);     ///< Volumetric mass source [kg / (m^3 s)] (positive if evaporation)
-    std::vector<double> Gamma_xv_wick(N, 0.0);      ///< Volumetric mass source [kg / (m^3 s)] (positive if evaporation)
+    std::vector<double> phi_x_v(N, 0.0);            /// Mass flux [kg/m2/s] at the wick-vapor interface (positive if evaporation)
+    std::vector<double> Gamma_xv_vapor(N, 0.0);     /// Volumetric mass source [kg / (m^3 s)] (positive if evaporation)
+    std::vector<double> Gamma_xv_wick(N, 0.0);      /// Volumetric mass source [kg / (m^3 s)] (positive if evaporation)
 
     /// The coefficient bU is needed in momentum predictor loop and pressure correction to estimate the velocities at the faces using the Rhie and Chow correction
-    std::vector<double> aXU(N, 0.0),                                                    ///< Lower tridiagonal coefficient for wick velocity
-        bXU(N, liquid_sodium::rho(1000)* dz / dt + 2 * liquid_sodium::mu(1000) / dz),  ///< Central tridiagonal coefficient for wick velocity
-        cXU(N, 0.0),                                                                    ///< Upper tridiagonal coefficient for wick velocity
-        dXU(N, 0.0);                                                                    ///< Known vector coefficient for wick velocity
+    std::vector<double> aXU(N, 0.0),                                                    /// Lower tridiagonal coefficient for wick velocity
+        bXU(N, liquid_sodium::rho(1000)* dz / dt + 2 * liquid_sodium::mu(1000) / dz),  /// Central tridiagonal coefficient for wick velocity
+        cXU(N, 0.0),                                                                    /// Upper tridiagonal coefficient for wick velocity
+        dXU(N, 0.0);                                                                    /// Known vector coefficient for wick velocity
 
     /// The coefficient bVU is needed in momentum predictor loop and pressure correction to estimate the velocities aVT the faces using the Rhie and Chow correction
-    std::vector<double> aVU(N, 0.0),                                                    ///< Lower tridiagonal coefficient for vapor velocity
-        bVU(N, 2 * (4.0 / 3.0 * vapor_sodium::mu(1000) / dz) + dz / dt * rho_v[0]),     ///< Central tridiagonal coefficient for vapor velocity
-        cVU(N, 0.0),                                                                    ///< Upper tridiagonal coefficient for vapor velocity
-        dVU(N, 0.0);                                                                    ///< Known vector for vapor velocity
+    std::vector<double> aVU(N, 0.0),                                                    /// Lower tridiagonal coefficient for vapor velocity
+        bVU(N, 2 * (4.0 / 3.0 * vapor_sodium::mu(1000) / dz) + dz / dt * rho_v[0]),     /// Central tridiagonal coefficient for vapor velocity
+        cVU(N, 0.0),                                                                    /// Upper tridiagonal coefficient for vapor velocity
+        dVU(N, 0.0);                                                                    /// Known vector for vapor velocity
 
     double total_mass = 0;
 
@@ -921,9 +921,7 @@ int main() {
 
     rho_output << std::setprecision(global_precision);
 
-    for (int i = 0; i < N; ++i) {
-        mesh_output << i * dz << " ";
-    }
+    for (int i = 0; i < N; ++i) mesh_output << i * dz << " ";
 
     mesh_output.flush();
     mesh_output.close();
@@ -958,10 +956,10 @@ int main() {
 
         #pragma region wall
 
-        std::vector<double> aTW(N, 0.0),        ///< Lower tridiagonal coefficient for wall temperature
-            bTW(N, 0.0),                        ///< Central tridiagonal coefficient for wall temperature
-            cTW(N, 0.0),                        ///< Upper tridiagonal coefficient for wall temperature
-            dTW(N, 0.0);                        ///< Known vector coefficient for wall temperature
+        std::vector<double> aTW(N, 0.0),        /// Lower tridiagonal coefficient for wall temperature
+            bTW(N, 0.0),                        /// Central tridiagonal coefficient for wall temperature
+            cTW(N, 0.0),                        /// Upper tridiagonal coefficient for wall temperature
+            dTW(N, 0.0);                        /// Known vector coefficient for wall temperature
 
         /// BCs for the first node: zero gradient, adiabatic face
         aTW[0] = 0.0; 
@@ -994,7 +992,7 @@ int main() {
             /// Volumetric heat source in the wall due to heat flux at the wall-wick interface [W/m^3]
             const double volum_heat_source_w_x = q_w_x_wall[i] * 2 * r_w / (r_o * r_o - r_w * r_w);
 
-            Q_w[i] = volum_heat_source_o_w - volum_heat_source_w_x;     ///< Wall volumetric heat source [W/m^3]
+            Q_w[i] = volum_heat_source_o_w - volum_heat_source_w_x;     /// Wall volumetric heat source [W/m^3]
 
             aTW[i] = -r;
             bTW[i] = 1 + 2 * r;
@@ -1002,7 +1000,7 @@ int main() {
             dTW[i] = T_w_bulk[i] + Q_w[i] * dt / (cp * rho);
         }
 
-        T_w_bulk = solveTridiagonal(aTW, bTW, cTW, dTW);        ///< Vector of final wall bulk temperatures
+        T_w_bulk = solveTridiagonal(aTW, bTW, cTW, dTW);        /// Vector of final wall bulk temperatures
 
         #pragma endregion
 
@@ -1061,16 +1059,16 @@ int main() {
             // Parallelizing here does not save time
             for (int i = 1; i < N - 1; i++) {
 
-                const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density of the central cell
-                const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   ///< Density of the left cell
-                const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   ///< Density of the right cell
+                const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       /// Density of the central cell
+                const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   /// Density of the left cell
+                const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   /// Density of the right cell
 
-                const double mu_P = liquid_sodium::mu(T_x_bulk[i]);         ///< Dynamic viscosity of the central cell
-                const double mu_L = liquid_sodium::mu(T_x_bulk[i - 1]);     ///< Dynamic viscosity of the left cell
-                const double mu_R = liquid_sodium::mu(T_x_bulk[i + 1]);     ///< Dynamic viscosity of the right cell
+                const double mu_P = liquid_sodium::mu(T_x_bulk[i]);         /// Dynamic viscosity of the central cell
+                const double mu_L = liquid_sodium::mu(T_x_bulk[i - 1]);     /// Dynamic viscosity of the left cell
+                const double mu_R = liquid_sodium::mu(T_x_bulk[i + 1]);     /// Dynamic viscosity of the right cell
 
-                const double D_l = 0.5 * (mu_P + mu_L) / dz;                ///< Diffusion coefficient [kg/(m2 s)] of the left face (average)
-                const double D_r = 0.5 * (mu_P + mu_R) / dz;                ///< Diffusion coefficient [kg/(m2 s)] of the right face (average)
+                const double D_l = 0.5 * (mu_P + mu_L) / dz;                /// Diffusion coefficient [kg/(m2 s)] of the left face (average)
+                const double D_r = 0.5 * (mu_P + mu_R) / dz;                /// Diffusion coefficient [kg/(m2 s)] of the right face (average)
 
                 /// RC correction for the left face velocity
                 const double rhie_chow_l = -(1.0 / bXU[i - 1] + 1.0 / bXU[i]) / (8 * dz) * (p_padded_x[i - 2] - 3 * p_padded_x[i - 1] + 3 * p_padded_x[i] - p_padded_x[i + 1]);
@@ -1084,11 +1082,11 @@ int main() {
                 /// Right face velocity [m/s] (average + RC correction)
                 const double u_r_face = 0.5 * (u_x[i] + u_x[i + 1]) + rhie_chow_on_off_x * rhie_chow_r;
 
-                const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       ///< Density of the left face (average)
-                const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       ///< Density of the right face (average)
+                const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       /// Density of the left face (average)
+                const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       /// Density of the right face (average)
 
-                const double F_l = rho_l * u_l_face;                        ///< Mass flux [kg/(m2 s)] of the left face 
-                const double F_r = rho_r * u_r_face;                        ///< Mass flux [kg/(m2 s)] of the right face 
+                const double F_l = rho_l * u_l_face;                        /// Mass flux [kg/(m2 s)] of the left face 
+                const double F_r = rho_r * u_r_face;                        /// Mass flux [kg/(m2 s)] of the right face 
 
                 aXU[i] = -std::max(F_l, 0.0) - D_l;
                 cXU[i] = -std::max(-F_r, 0.0) - D_r;
@@ -1138,12 +1136,12 @@ int main() {
                  */
                 for (int i = 1; i < N - 1; i++) {
 
-                    const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density [kg/m3] of the central cell
-                    const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   ///< Density [kg/m3] of the left cell
-                    const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   ///< Density [kg/m3] of the right cell
+                    const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       /// Density [kg/m3] of the central cell
+                    const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   /// Density [kg/m3] of the left cell
+                    const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   /// Density [kg/m3] of the right cell
 
-                    const double d_l_face = 0.5 * (1.0 / bXU[i - 1] + 1.0 / bXU[i]) / dz;    ///< 1/Ap [(m2 s)/kg] average on left face
-                    const double d_r_face = 0.5 * (1.0 / bXU[i] + 1.0 / bXU[i + 1]) / dz;    ///< 1/Ap [(m2 s)/kg] average on right face
+                    const double d_l_face = 0.5 * (1.0 / bXU[i - 1] + 1.0 / bXU[i]) / dz;    /// 1/Ap [(m2 s)/kg] average on left face
+                    const double d_r_face = 0.5 * (1.0 / bXU[i] + 1.0 / bXU[i + 1]) / dz;    /// 1/Ap [(m2 s)/kg] average on right face
 
                     /// RC correction for the left face velocity
                     const double rhie_chow_l = -d_l_face / 4 * (p_padded_x[i - 2] - 3 * p_padded_x[i - 1] + 3 * p_padded_x[i] - p_padded_x[i + 1]);
@@ -1151,25 +1149,25 @@ int main() {
                     /// RC correction for the right face velocity 
                     const double rhie_chow_r = -d_r_face / 4 * (p_padded_x[i - 1] - 3 * p_padded_x[i] + 3 * p_padded_x[i + 1] - p_padded_x[i + 2]);
 
-                    const double rho_l = 0.5 * (rho_L + rho_P);                         ///< Density [kg/m3] on the left face
-                    const double E_l = rho_l * d_l_face;                                ///< Diffusion coefficient [s/m] on the left face
+                    const double rho_l = 0.5 * (rho_L + rho_P);                         /// Density [kg/m3] on the left face
+                    const double E_l = rho_l * d_l_face;                                /// Diffusion coefficient [s/m] on the left face
 
-                    const double rho_r = 0.5 * (rho_P + rho_R);                         ///< Density [kg/m3] on the right face
-                    const double E_r = rho_r * d_r_face;                                ///< Diffusion coefficient [s/m] on the right face
+                    const double rho_r = 0.5 * (rho_P + rho_R);                         /// Density [kg/m3] on the right face
+                    const double E_r = rho_r * d_r_face;                                /// Diffusion coefficient [s/m] on the right face
 
-                    const double u_l_star = 0.5 * (u_x[i - 1] + u_x[i]) + rhie_chow_on_off_x * rhie_chow_l;                   ///< Left face velocity [m/s] (average + RC correction)
-                    const double u_r_star = 0.5 * (u_x[i] + u_x[i + 1]) + rhie_chow_on_off_x * rhie_chow_r;                   ///< Right face velocity [m/s] (average + RC correction)
+                    const double u_l_star = 0.5 * (u_x[i - 1] + u_x[i]) + rhie_chow_on_off_x * rhie_chow_l;                   /// Left face velocity [m/s] (average + RC correction)
+                    const double u_r_star = 0.5 * (u_x[i] + u_x[i + 1]) + rhie_chow_on_off_x * rhie_chow_r;                   /// Right face velocity [m/s] (average + RC correction)
 
-                    const double phi_l_star = (u_l_star > 0.0) ? rho_L * u_l_star : rho_P * u_l_star;  ///< Left face mass flux [kg/(m^2 s)] (upwind discretization)
-                    const double phi_r_star = (u_r_star > 0.0) ? rho_P * u_r_star : rho_R * u_r_star;  ///< Right face mass flux [kg/(m^2 s)] (upwind discretization)
+                    const double phi_l_star = (u_l_star > 0.0) ? rho_L * u_l_star : rho_P * u_l_star;  /// Left face mass flux [kg/(m^2 s)] (upwind discretization)
+                    const double phi_r_star = (u_r_star > 0.0) ? rho_P * u_r_star : rho_R * u_r_star;  /// Right face mass flux [kg/(m^2 s)] (upwind discretization)
 
-                    const double mass_imbalance = (phi_r_star - phi_l_star);  ///< Mass difference of the fluxes across faces [kg/(m^2 s)]
-                    const double mass_flux = Gamma_xv_wick[i] * dz;                  ///< Mass flux [kg/(m^2 s)] due to external source (positive if out of the wick)
+                    const double mass_imbalance = (phi_r_star - phi_l_star);  /// Mass difference of the fluxes across faces [kg/(m^2 s)]
+                    const double mass_flux = Gamma_xv_wick[i] * dz;                  /// Mass flux [kg/(m^2 s)] due to external source (positive if out of the wick)
 
-                    aXP[i] = -E_l;                              ///< [s/m]
-                    cXP[i] = -E_r;                              ///< [s/m]
-                    bXP[i] = E_l + E_r;                         ///< [s/m]
-                    dXP[i] = -mass_flux - mass_imbalance;       ///< [kg/(m^2 s)]
+                    aXP[i] = -E_l;                              /// [s/m]
+                    cXP[i] = -E_r;                              /// [s/m]
+                    bXP[i] = E_l + E_r;                         /// [s/m]
+                    dXP[i] = -mass_flux - mass_imbalance;       /// [kg/(m^2 s)]
                 }
 
                 /// BCs for the correction of pressure: zero gradient at first node
@@ -1261,22 +1259,22 @@ int main() {
          */
         for (int i = 1; i < N - 1; i++) {
 
-            const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       ///< Density [kg/m3] of the central cell
-            const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   ///< Density [kg/m3]of the left cell
-            const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   ///< Density [kg/m3]of the right cell
+            const double rho_P = liquid_sodium::rho(T_x_bulk[i]);       /// Density [kg/m3] of the central cell
+            const double rho_L = liquid_sodium::rho(T_x_bulk[i - 1]);   /// Density [kg/m3]of the left cell
+            const double rho_R = liquid_sodium::rho(T_x_bulk[i + 1]);   /// Density [kg/m3]of the right cell
 
-            const double k_cond_P = liquid_sodium::k(T_x_bulk[i]);      ///< Thermal conductivity [W/(m*K)] of the central cell
-            const double k_cond_L = liquid_sodium::k(T_x_bulk[i - 1]);  ///< Thermal conductivity [W/(m*K)] of the left cell
-            const double k_cond_R = liquid_sodium::k(T_x_bulk[i + 1]);  ///< Thermal conductivity [W/(m*K)] of the right cell
+            const double k_cond_P = liquid_sodium::k(T_x_bulk[i]);      /// Thermal conductivity [W/(m*K)] of the central cell
+            const double k_cond_L = liquid_sodium::k(T_x_bulk[i - 1]);  /// Thermal conductivity [W/(m*K)] of the left cell
+            const double k_cond_R = liquid_sodium::k(T_x_bulk[i + 1]);  /// Thermal conductivity [W/(m*K)] of the right cell
 
-            const double cp_P = liquid_sodium::cp(T_x_bulk[i]);         ///< S. h. at constant pressure [J/(kg K)] of the central cell
-            const double cp_L = liquid_sodium::cp(T_x_bulk[i - 1]);     ///< S. h. at constant pressure [J/(kg K)] of the left cell
-            const double cp_R = liquid_sodium::cp(T_x_bulk[i + 1]);     ///< S. h. at constant pressure [J/(kg K)] of the right cell
+            const double cp_P = liquid_sodium::cp(T_x_bulk[i]);         /// S. h. at constant pressure [J/(kg K)] of the central cell
+            const double cp_L = liquid_sodium::cp(T_x_bulk[i - 1]);     /// S. h. at constant pressure [J/(kg K)] of the left cell
+            const double cp_R = liquid_sodium::cp(T_x_bulk[i + 1]);     /// S. h. at constant pressure [J/(kg K)] of the right cell
 
-            const double rhoCp_dzdt = rho_P * cp_P * dz / dt;           ///< Useful constant [W/(m^2 K)]
+            const double rhoCp_dzdt = rho_P * cp_P * dz / dt;           /// Useful constant [W/(m^2 K)]
 
-            const double D_l = 0.5 * (k_cond_P + k_cond_L) / dz;        ///< Diffusion coefficient [W/(m^2 K)] of the left face (average)
-            const double D_r = 0.5 * (k_cond_P + k_cond_R) / dz;        ///< Diffusion coefficient [W/(m^2 K)] of the right face (average)
+            const double D_l = 0.5 * (k_cond_P + k_cond_L) / dz;        /// Diffusion coefficient [W/(m^2 K)] of the left face (average)
+            const double D_r = 0.5 * (k_cond_P + k_cond_R) / dz;        /// Diffusion coefficient [W/(m^2 K)] of the right face (average)
 
             /// RC correction for the left face velocity
             const double rhie_chow_l = -(1.0 / bXU[i - 1] + 1.0 / bXU[i]) / (8 * dz) * (p_padded_x[i - 2] - 3 * p_padded_x[i - 1] + 3 * p_padded_x[i] - p_padded_x[i + 1]);
@@ -1290,18 +1288,18 @@ int main() {
             /// Right face velocity [m/s] (average + RC correction)
             const double u_r_face = 0.5 * (u_x[i] + u_x[i + 1]) + rhie_chow_on_off_x * rhie_chow_r;
 
-            const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       ///< Density [kg/m3] of the left face (upwind)
-            const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       ///< Density [kg/m3] of the right face (upwind)
+            const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       /// Density [kg/m3] of the left face (upwind)
+            const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       /// Density [kg/m3] of the right face (upwind)
 
             // Upwind specific heat
-            const double cp_l = (u_l_face >= 0) ? cp_L : cp_P;          ///< S. h. at constant pressure [J/(kg K)] of the left face (upwind)
-            const double cp_r = (u_r_face >= 0) ? cp_P : cp_R;          ///< S. h. at constant pressure [J/(kg K)] of the right face (upwind)
+            const double cp_l = (u_l_face >= 0) ? cp_L : cp_P;          /// S. h. at constant pressure [J/(kg K)] of the left face (upwind)
+            const double cp_r = (u_r_face >= 0) ? cp_P : cp_R;          /// S. h. at constant pressure [J/(kg K)] of the right face (upwind)
 
-            const double Fl = rho_l * u_l_face;                         ///< Mass flux [kg/(m2 s)] of the left face (upwind)
-            const double Fr = rho_r * u_r_face;                         ///< Mass flux [kg/(m2 s)] of the left face (upwind)
+            const double Fl = rho_l * u_l_face;                         /// Mass flux [kg/(m2 s)] of the left face (upwind)
+            const double Fr = rho_r * u_r_face;                         /// Mass flux [kg/(m2 s)] of the left face (upwind)
 
-            const double C_l = (Fl * cp_l);                             ///< Mass flux [W/(m^2 K)] of the left face (upwind)
-            const double C_r = (Fr * cp_r);                             ///< Mass flux [W/(m^2 K)] of the left face (upwind)
+            const double C_l = (Fl * cp_l);                             /// Mass flux [W/(m^2 K)] of the left face (upwind)
+            const double C_r = (Fr * cp_r);                             /// Mass flux [W/(m^2 K)] of the left face (upwind)
 
             /// Volumetric heat source due to heat flux at the wall-wick interface [W/m^3]
             double volum_heat_source_w_x = q_w_x_wick[i] * 2 * r_w / (r_w * r_w - r_inner * r_inner);
@@ -1314,10 +1312,10 @@ int main() {
               */ 
             Q_x[i] = volum_heat_source_w_x*dz - volum_heat_source_x_v*dz + Q_mass_wick[i];  
 
-            aXT[i] = -D_l - std::max(C_l, 0.0);                                                 ///< [W/(m2 K)]
-            cXT[i] = -D_r - std::max(-C_r, 0.0);                                                ///< [W/(m2 K)]
-            bXT[i] = (std::max(C_r, 0.0) + std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;       ///< [W/(m2 K)]
-            dXT[i] = rhoCp_dzdt * T_old_x[i] + Q_x[i];                                          ///< [W/m2]
+            aXT[i] = -D_l - std::max(C_l, 0.0);                                                 /// [W/(m2 K)]
+            cXT[i] = -D_r - std::max(-C_r, 0.0);                                                /// [W/(m2 K)]
+            bXT[i] = (std::max(C_r, 0.0) + std::max(-C_l, 0.0)) + D_l + D_r + rhoCp_dzdt;       /// [W/(m2 K)]
+            dXT[i] = rhoCp_dzdt * T_old_x[i] + Q_x[i];                                          /// [W/m2]
         }
 
         /// Temperature BCs: zero gradient on the first node
@@ -1359,8 +1357,8 @@ int main() {
 
         for (int i = 0; i < N; ++i) {
 
-            std::array<std::array<double, 6>, 6> A{};           ///< Linear system matrix A
-            std::array<double, 6> B{};                          ///< Linear system vector B
+            std::array<std::array<double, 6>, 6> A{};           /// Linear system matrix A
+            std::array<double, 6> B{};                          /// Linear system vector B
 
             /**
              * Mass flux from the wick to the vapor [kg/(m2 s)]. 
@@ -1386,23 +1384,23 @@ int main() {
             else if (b <= 0.9962) Omega = 0.8959 + 2.6457 * b;
             else Omega = 2.0 * b * std::sqrt(M_PI);
 
-            const double k_w = steel::k(T_w_bulk[i]);                                           ///< Wall thermal conductivity [W/(m K)]
-            const double k_x = liquid_sodium::k(T_x_bulk[i]);                                   ///< Liquid thermal conductivity [W/(m K)]
-            const double cp_v = vapor_sodium::cp(T_v_bulk[i]);                                  ///< Vapor specific heat [J/(kg K)]
-            const double k_v_cond = vapor_sodium::k(T_v_bulk[i], p_v[i]);                       ///< Vapor thermal conductivity [W/(m K)]
-            const double k_v_eff = k_v_cond + mu_t[i] * cp_v / Pr_t;                            ///< Effective vapor thermal conductivity [W/(m K)]
-            const double mu_v = vapor_sodium::mu(T_v_bulk[i]);                                  ///< Vapor dynamic viscosity [Pa*s]
-            const double Dh_v = 2.0 * r_inner;                                                  ///< Hydraulic diameter of the vapor core [m]
-            const double Re_v = rho_v[i] * std::fabs(u_v[i]) * Dh_v / mu_v;                     ///< Reynolds number [-]
-            const double Pr_v = cp_v * mu_v / k_v_cond;                                         ///< Prandtl number [-]
-            const double H_xm = vapor_sodium::h_conv(Re_v, Pr_v, k_v_cond, Dh_v);               ///< Convective heat transfer coefficient at the vapor-wick interface [W/m^2/K]
-            const double Psat = vapor_sodium::P_sat(T_x_v[i]);                                  ///< Saturation pressure [Pa]        
-            const double dPsat_dT = Psat * std::log(10.0) * (7740.0 / (T_x_v[i] * T_x_v[i]));   ///< Derivative of the saturation pressure wrt T [Pa/K]   
+            const double k_w = steel::k(T_w_bulk[i]);                                           /// Wall thermal conductivity [W/(m K)]
+            const double k_x = liquid_sodium::k(T_x_bulk[i]);                                   /// Liquid thermal conductivity [W/(m K)]
+            const double cp_v = vapor_sodium::cp(T_v_bulk[i]);                                  /// Vapor specific heat [J/(kg K)]
+            const double k_v_cond = vapor_sodium::k(T_v_bulk[i], p_v[i]);                       /// Vapor thermal conductivity [W/(m K)]
+            const double k_v_eff = k_v_cond + mu_t[i] * cp_v / Pr_t;                            /// Effective vapor thermal conductivity [W/(m K)]
+            const double mu_v = vapor_sodium::mu(T_v_bulk[i]);                                  /// Vapor dynamic viscosity [Pa*s]
+            const double Dh_v = 2.0 * r_inner;                                                  /// Hydraulic diameter of the vapor core [m]
+            const double Re_v = rho_v[i] * std::fabs(u_v[i]) * Dh_v / mu_v;                     /// Reynolds number [-]
+            const double Pr_v = cp_v * mu_v / k_v_cond;                                         /// Prandtl number [-]
+            const double H_xm = vapor_sodium::h_conv(Re_v, Pr_v, k_v_cond, Dh_v);               /// Convective heat transfer coefficient at the vapor-wick interface [W/m^2/K]
+            const double Psat = vapor_sodium::P_sat(T_x_v[i]);                                  /// Saturation pressure [Pa]        
+            const double dPsat_dT = Psat * std::log(10.0) * (7740.0 / (T_x_v[i] * T_x_v[i]));   /// Derivative of the saturation pressure wrt T [Pa/K]   
 
-            const double fac = (2.0 * r_inner * eps_s * beta) / (r_w * r_w);    ///< Useful factor in the coefficients calculation [s / m^2]
+            const double fac = (2.0 * r_inner * eps_s * beta) / (r_w * r_w);    /// Useful factor in the coefficients calculation [s / m^2]
 
-            double h_xv_v;          ///< Specific enthalpy [J/kg] of vapor upon phase change between wick and vapor
-            double h_vx_x;          ///< Specific enthalpy [J/kg] of wick upon phase change between vapor and wick
+            double h_xv_v;          /// Specific enthalpy [J/kg] of vapor upon phase change between wick and vapor
+            double h_vx_x;          /// Specific enthalpy [J/kg] of wick upon phase change between vapor and wick
 
             if (phi_x_v[i] > 0.0) {
 
@@ -1459,19 +1457,19 @@ int main() {
             ABC[i][3] = T_x_bulk[i] - E1x * ABC[i][4] - E2x * ABC[i][5];
 
             // Update temperatures at the interfaces
-            T_o_w[i] = ABC[i][0] + ABC[i][1] * r_o + ABC[i][2] * r_o * r_o;                         ///< Temperature at the outer wall
-            T_w_x[i] = ABC[i][0] + ABC[i][1] * r_w + ABC[i][2] * r_w * r_w;                         ///< Temperature at the wall wick interface
-            T_x_v_old[i] = T_x_v[i];                                                                ///< Temperature backup
-            T_x_v[i] = ABC[i][3] + ABC[i][4] * r_inner + ABC[i][5] * r_inner * r_inner;             ///< Temperature at the wick vapor interface
+            T_o_w[i] = ABC[i][0] + ABC[i][1] * r_o + ABC[i][2] * r_o * r_o;                         /// Temperature at the outer wall
+            T_w_x[i] = ABC[i][0] + ABC[i][1] * r_w + ABC[i][2] * r_w * r_w;                         /// Temperature at the wall wick interface
+            T_x_v_old[i] = T_x_v[i];                                                                /// Temperature backup
+            T_x_v[i] = ABC[i][3] + ABC[i][4] * r_inner + ABC[i][5] * r_inner * r_inner;             /// Temperature at the wick vapor interface
 
             // Update heat fluxes at the interfaces
-            if (i <= evaporator_nodes) q_o_w[i] = q_pp_evaporator;                                  ///< Evaporator imposed heat flux
+            if (i <= evaporator_nodes) q_o_w[i] = q_pp_evaporator;                                  /// Evaporator imposed heat flux
             else if (i >= (N - condenser_nodes)) {
 
-                double conv = h_conv * (T_o_w[i] - T_env);                                          ///< Condenser convective heat flux
-                double irr = emissivity * sigma * (std::pow(T_o_w[i], 4) - std::pow(T_env, 4));     ///< Condenser irradiation heat flux
+                double conv = h_conv * (T_o_w[i] - T_env);                                          /// Condenser convective heat flux
+                double irr = emissivity * sigma * (std::pow(T_o_w[i], 4) - std::pow(T_env, 4));     /// Condenser irradiation heat flux
 
-                q_o_w[i] = -(conv + irr);                                                           ///< Heat flux at the outer wall (positive if to the wall)
+                q_o_w[i] = -(conv + irr);                                                           /// Heat flux at the outer wall (positive if to the wall)
             }
                                                                                        
             q_w_x_wall[i] = steel::k(T_w_x[i]) * (ABC[i][1] + 2.0 * ABC[i][2] * r_w);               // Heat flux across wall-wick interface (positive if to wick)
@@ -1479,8 +1477,8 @@ int main() {
             q_x_v_wick[i] = liquid_sodium::k(T_x_v[i]) * (ABC[i][4] + 2.0 * ABC[i][5] * r_inner);           // Heat flux across wick-vapor interface (positive if to vapor)
             q_x_v_vapor[i] = vapor_sodium::k(T_x_v[i], p_v[i]) * (ABC[i][4] + 2.0 * ABC[i][5] * r_inner);   // Heat flux across wick-vapor interface (positive if to vapor)
 
-            Q_mass_vapor[i] = Gamma_xv_vapor[i] * h_xv_v;  ///< Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the vapor)
-            Q_mass_wick[i] = -Gamma_xv_wick[i] * h_vx_x;  ///< Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the wick)
+            Q_mass_vapor[i] = Gamma_xv_vapor[i] * h_xv_v;  /// Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the vapor)
+            Q_mass_wick[i] = -Gamma_xv_wick[i] * h_vx_x;  /// Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the wick)
         }
 
         // Coupling hypotheses: temperature is transferred to the pressure of the sodium vapor
@@ -1547,16 +1545,16 @@ int main() {
             
             for (int i = 1; i < N - 1; i++) {
 
-                const double rho_P = rho_v[i];                              ///< Density [kg/m3] of the central cell
-                const double rho_L = rho_v[i - 1];                          ///< Density [kg/m3] of the left cell
-                const double rho_R = rho_v[i + 1];                          ///< Density [kg/m3] of the right cell
+                const double rho_P = rho_v[i];                              /// Density [kg/m3] of the central cell
+                const double rho_L = rho_v[i - 1];                          /// Density [kg/m3] of the left cell
+                const double rho_R = rho_v[i + 1];                          /// Density [kg/m3] of the right cell
 
-                const double mu_P = vapor_sodium::mu(T_v_bulk[i]);          ///< Dynamic viscosity [kg/(m s)] of the central cell
-                const double mu_L = vapor_sodium::mu(T_v_bulk[i - 1]);      ///< Dynamic viscosity [kg/(m s)] of the left cell
-                const double mu_R = vapor_sodium::mu(T_v_bulk[i + 1]);      ///< Dynamic viscosity [kg/(m s)] of the right cell
+                const double mu_P = vapor_sodium::mu(T_v_bulk[i]);          /// Dynamic viscosity [kg/(m s)] of the central cell
+                const double mu_L = vapor_sodium::mu(T_v_bulk[i - 1]);      /// Dynamic viscosity [kg/(m s)] of the left cell
+                const double mu_R = vapor_sodium::mu(T_v_bulk[i + 1]);      /// Dynamic viscosity [kg/(m s)] of the right cell
 
-                const double D_l = 4.0 / 3.0 * 0.5 * (mu_P + mu_L) / dz;    ///< Diffusion coefficient [kg/(m2 s)] of the left face (average)
-                const double D_r = 4.0 / 3.0 * 0.5 * (mu_P + mu_R) / dz;    ///< Diffusion coefficient [kg/(m2 s)] of the right face (average)
+                const double D_l = 4.0 / 3.0 * 0.5 * (mu_P + mu_L) / dz;    /// Diffusion coefficient [kg/(m2 s)] of the left face (average)
+                const double D_r = 4.0 / 3.0 * 0.5 * (mu_P + mu_R) / dz;    /// Diffusion coefficient [kg/(m2 s)] of the right face (average)
 
                 /// RC correction for the left face velocity
                 const double rhie_chow_l = -(1.0 / bVU[i - 1] + 1.0 / bVU[i]) / (8 * dz) * (p_padded_v[i - 2] - 3 * p_padded_v[i - 1] + 3 * p_padded_v[i] - p_padded_v[i + 1]);
@@ -1565,26 +1563,26 @@ int main() {
                 const double rhie_chow_r = -(1.0 / bVU[i + 1] + 1.0 / bVU[i]) / (8 * dz) * (p_padded_v[i - 1] - 3 * p_padded_v[i] + 3 * p_padded_v[i + 1] - p_padded_v[i + 2]);
 
                 const double u_l_face = 0.5 * (u_v[i - 1] + u_v[i]) 
-                    + rhie_chow_on_off_v * rhie_chow_l;                     ///< Left face velocity [m/s] (average + RC correction)
+                    + rhie_chow_on_off_v * rhie_chow_l;                     /// Left face velocity [m/s] (average + RC correction)
 
                 const double u_r_face = 0.5 * (u_v[i] + u_v[i + 1]) 
-                    + rhie_chow_on_off_v * rhie_chow_r;                     ///< Right face velocity [m/s] (average + RC correction)
+                    + rhie_chow_on_off_v * rhie_chow_r;                     /// Right face velocity [m/s] (average + RC correction)
 
-                const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       ///< Density [kg/m3] of the left face (upwind)
-                const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       ///< Density [kg/m3] of the right face (upwind)
+                const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;       /// Density [kg/m3] of the left face (upwind)
+                const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;       /// Density [kg/m3] of the right face (upwind)
 
-                const double F_l = rho_l * u_l_face;                        ///< Mass flux [kg/(m2 s)] of the left face (upwind)
-                const double F_r = rho_r * u_r_face;                        ///< Mass flux [kg/(m2 s)] of the right face (upwind)
+                const double F_l = rho_l * u_l_face;                        /// Mass flux [kg/(m2 s)] of the left face (upwind)
+                const double F_r = rho_r * u_r_face;                        /// Mass flux [kg/(m2 s)] of the right face (upwind)
 
-                const double Re = u_v[i] * (2 * r_inner) * rho_P / mu_P;    ///< Reynolds number [-]
+                const double Re = u_v[i] * (2 * r_inner) * rho_P / mu_P;    /// Reynolds number [-]
 
-                const double f = (Re < 1187.4) ? 64 / Re : 0.3164 * std::pow(Re, -0.25);    ///< Friction factor [-] (according to THROHPUT)
-                const double F = 0.25 * f * rho_P * std::abs(u_v[i]) / r_inner;             ///< Friction force [kg/(m2 s)]
+                const double f = (Re < 1187.4) ? 64 / Re : 0.3164 * std::pow(Re, -0.25);    /// Friction factor [-] (according to THROHPUT)
+                const double F = 0.25 * f * rho_P * std::abs(u_v[i]) / r_inner;             /// Friction force [kg/(m2 s)]
 
-                aVU[i] = -std::max(F_l, 0.0) - D_l;                                                             ///< [kg/(m2 s)]
-                cVU[i] = -std::max(-F_r, 0.0) - D_r;                                                            ///< [kg/(m2 s)]
-                bVU[i] = (std::max(F_r, 0.0) + std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F * dz;     ///< [kg/(m2 s)]
-                dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt /* + Su[i] * dz */;        ///< [kg/(m s2)]
+                aVU[i] = -std::max(F_l, 0.0) - D_l;                                                             /// [kg/(m2 s)]
+                cVU[i] = -std::max(-F_r, 0.0) - D_r;                                                            /// [kg/(m2 s)]
+                bVU[i] = (std::max(F_r, 0.0) + std::max(-F_l, 0.0)) + rho_P * dz / dt + D_l + D_r + F * dz;     /// [kg/(m2 s)]
+                dVU[i] = -0.5 * (p_v[i + 1] - p_v[i - 1]) + rho_P * u_v[i] * dz / dt /* + Su[i] * dz */;        /// [kg/(m s2)]
             }
 
             /// Diffusion coefficients for the first and last node to define BCs
@@ -1645,12 +1643,12 @@ int main() {
                 
                 for (int i = 1; i < N - 1; i++) {
 
-                    const double rho_P = rho_v[i];              ///< Density [kg/m3] of the central cell
-                    const double rho_L = rho_v[i - 1];          ///< Density [kg/m3] of the left cell
-                    const double rho_R = rho_v[i + 1];          ///< Density [kg/m3] of the right cell
+                    const double rho_P = rho_v[i];              /// Density [kg/m3] of the central cell
+                    const double rho_L = rho_v[i - 1];          /// Density [kg/m3] of the left cell
+                    const double rho_R = rho_v[i + 1];          /// Density [kg/m3] of the right cell
 
-                    const double d_l_face = 0.5 * (1.0 / bVU[i - 1] + 1.0 / bVU[i]) / dz;    ///< 1/Ap [(m2 s)/kg] average on left face
-                    const double d_r_face = 0.5 * (1.0 / bVU[i] + 1.0 / bVU[i + 1]) / dz;    ///< 1/Ap [(m2 s)/kg] average on right face
+                    const double d_l_face = 0.5 * (1.0 / bVU[i - 1] + 1.0 / bVU[i]) / dz;    /// 1/Ap [(m2 s)/kg] average on left face
+                    const double d_r_face = 0.5 * (1.0 / bVU[i] + 1.0 / bVU[i + 1]) / dz;    /// 1/Ap [(m2 s)/kg] average on right face
 
                     /// RC correction for the left face velocity
                     const double rhie_chow_l = -d_l_face / 4 * (p_padded_v[i - 2] - 3 * p_padded_v[i - 1] + 3 * p_padded_v[i] - p_padded_v[i + 1]);
@@ -1658,30 +1656,30 @@ int main() {
                     /// RC correction for the right face velocity
                     const double rhie_chow_r = -d_r_face / 4 * (p_padded_v[i - 1] - 3 * p_padded_v[i] + 3 * p_padded_v[i + 1] - p_padded_v[i + 2]);
 
-                    const double rho_l = 0.5 * (rho_v[i - 1] + rho_v[i]);               ///< Density [kg/m3] on the left face
-                    const double E_l = rho_l * d_l_face;                                ///< Diffusion coefficient [s/m] on the left face
+                    const double rho_l = 0.5 * (rho_v[i - 1] + rho_v[i]);               /// Density [kg/m3] on the left face
+                    const double E_l = rho_l * d_l_face;                                /// Diffusion coefficient [s/m] on the left face
 
-                    const double rho_r = 0.5 * (rho_v[i] + rho_v[i + 1]);               ///< Density [kg/m3] on the right face
-                    const double E_r = rho_r * d_r_face;                                ///< Diffusion coefficient [s/m] on the right face
+                    const double rho_r = 0.5 * (rho_v[i] + rho_v[i + 1]);               /// Density [kg/m3] on the right face
+                    const double E_r = rho_r * d_r_face;                                /// Diffusion coefficient [s/m] on the right face
 
-                    const double psi_i = 1.0 / (Rv * T_v_bulk[i]);                      ///< Compressibility [kg/J] assuming ideal gas
+                    const double psi_i = 1.0 / (Rv * T_v_bulk[i]);                      /// Compressibility [kg/J] assuming ideal gas
 
                     const double u_l_star = 0.5 * (u_v[i - 1] + u_v[i]) +
-                        rhie_chow_on_off_v * rhie_chow_l;                   ///< Left face velocity [m/s] (average + RC correction)
+                        rhie_chow_on_off_v * rhie_chow_l;                   /// Left face velocity [m/s] (average + RC correction)
                     const double u_r_star = 0.5 * (u_v[i] + u_v[i + 1]) +
-                        rhie_chow_on_off_v * rhie_chow_r;                   ///< Right face velocity [m/s] (average + RC correction)
+                        rhie_chow_on_off_v * rhie_chow_r;                   /// Right face velocity [m/s] (average + RC correction)
 
-                    const double phi_l_star = (u_l_star > 0.0) ? rho_L * u_l_star : rho_P * u_l_star;  ///< Left face mass flux [kg/(m^2 s)] (upwind discretization)
-                    const double phi_r_star = (u_r_star > 0.0) ? rho_P * u_r_star : rho_R * u_r_star;  ///< Right face mass flux [kg/(m^2 s)] (upwind discretization)
+                    const double phi_l_star = (u_l_star > 0.0) ? rho_L * u_l_star : rho_P * u_l_star;  /// Left face mass flux [kg/(m^2 s)] (upwind discretization)
+                    const double phi_r_star = (u_r_star > 0.0) ? rho_P * u_r_star : rho_R * u_r_star;  /// Right face mass flux [kg/(m^2 s)] (upwind discretization)
 
-                    const double mass_imbalance = (phi_r_star - phi_l_star);        ///< Mass difference of the fluxes across faces [kg/(m2 s)]
-                    const double mass_flux_source = Gamma_xv_vapor[i] * dz;               ///< Mass flux [kg/(m2 s)] due to external source (positive if out of the wick)
-                    const double change_density = (rho_P - rho_old_v[i]) * dz / dt; ///< Term [kg/(m2 s)] related to the change in density
+                    const double mass_imbalance = (phi_r_star - phi_l_star);        /// Mass difference of the fluxes across faces [kg/(m2 s)]
+                    const double mass_flux_source = Gamma_xv_vapor[i] * dz;               /// Mass flux [kg/(m2 s)] due to external source (positive if out of the wick)
+                    const double change_density = (rho_P - rho_old_v[i]) * dz / dt; /// Term [kg/(m2 s)] related to the change in density
 
-                    aVP[i] = -E_l;                                                  ///< [s/m]
-                    cVP[i] = -E_r;                                                  ///< [s/m]
-                    bVP[i] = E_l + E_r + psi_i * dz / dt;                           ///< [s/m]
-                    dVP[i] = +mass_flux_source - mass_imbalance - change_density;          ///< [kg/(m^2 s)]
+                    aVP[i] = -E_l;                                                  /// [s/m]
+                    cVP[i] = -E_r;                                                  /// [s/m]
+                    bVP[i] = E_l + E_r + psi_i * dz / dt;                           /// [s/m]
+                    dVP[i] = +mass_flux_source - mass_imbalance - change_density;          /// [kg/(m^2 s)]
 
                     
                 }
@@ -1794,11 +1792,11 @@ int main() {
           */
         if (SST_model_turbulence_on_off == 1) {
 
-            const double sigma_k = 0.85;        ///< Diffusion coefficient for k [-]
-            const double sigma_omega = 0.5;     ///< Diffusion coefficient for ω [-]
-            const double beta_star = 0.09;      ///< Production limiter coefficient [-]
-            const double beta = 0.075;          ///< Dissipation coefficient for ω [-]
-            const double alpha = 5.0 / 9.0;     ///< Blending coefficient [-]
+            const double sigma_k = 0.85;        /// Diffusion coefficient for k [-]
+            const double sigma_omega = 0.5;     /// Diffusion coefficient for ω [-]
+            const double beta_star = 0.09;      /// Production limiter coefficient [-]
+            const double beta = 0.075;          /// Dissipation coefficient for ω [-]
+            const double alpha = 5.0 / 9.0;     /// Blending coefficient [-]
 
             /// Tridiagonal coefficients for k
             std::vector<double> aK(N, 0.0), 
@@ -1812,8 +1810,8 @@ int main() {
                                     cW(N, 0.0), 
                                     dW(N, 0.0);
 
-            std::vector<double> dudz(N, 0.0);       ///< Velocity gradient du/dz [1/s]
-            std::vector<double> Pk(N, 0.0);         ///< Turbulence production rate term [m2/s3]
+            std::vector<double> dudz(N, 0.0);       /// Velocity gradient du/dz [1/s]
+            std::vector<double> Pk(N, 0.0);         /// Turbulence production rate term [m2/s3]
 
             /// Compute velocity gradient and turbulence production term
             for (int i = 1; i < N - 1; i++) {
@@ -1905,28 +1903,28 @@ int main() {
         
         for (int i = 1; i < N - 1; i++) {
 
-            const double rho_P = rho_v[i];                                          ///< Density [kg/m3] of the central cell
-            const double rho_L = rho_v[i - 1];                                      ///< Density [kg/m3] of the left cell
-            const double rho_R = rho_v[i + 1];                                      ///< Density [kg/m3] of the right cell
+            const double rho_P = rho_v[i];                                          /// Density [kg/m3] of the central cell
+            const double rho_L = rho_v[i - 1];                                      /// Density [kg/m3] of the left cell
+            const double rho_R = rho_v[i + 1];                                      /// Density [kg/m3] of the right cell
 
-            const double k_cond_P = vapor_sodium::k(T_v_bulk[i], p_v[i]);           ///< Thermal conductivity [W/(m*K)] of the central cell       
-            const double k_cond_L = vapor_sodium::k(T_v_bulk[i - 1], p_v[i - 1]);   ///< Thermal conductivity [W/(m*K)] of the left cell
-            const double k_cond_R = vapor_sodium::k(T_v_bulk[i + 1], p_v[i + 1]);   ///< Thermal conductivity [W/(m*K)] of the right cell
+            const double k_cond_P = vapor_sodium::k(T_v_bulk[i], p_v[i]);           /// Thermal conductivity [W/(m*K)] of the central cell       
+            const double k_cond_L = vapor_sodium::k(T_v_bulk[i - 1], p_v[i - 1]);   /// Thermal conductivity [W/(m*K)] of the left cell
+            const double k_cond_R = vapor_sodium::k(T_v_bulk[i + 1], p_v[i + 1]);   /// Thermal conductivity [W/(m*K)] of the right cell
 
-            const double cp_P = vapor_sodium::cp(T_v_bulk[i]);                      ///< S. h. at constant pressure [J/(kg K)] of the central cell
-            const double cp_L = vapor_sodium::cp(T_v_bulk[i - 1]);                  ///< S. h. at constant pressure [J/(kg K)] of the left cell
-            const double cp_R = vapor_sodium::cp(T_v_bulk[i + 1]);                  ///< S. h. at constant pressure [J/(kg K)] of the right cell
+            const double cp_P = vapor_sodium::cp(T_v_bulk[i]);                      /// S. h. at constant pressure [J/(kg K)] of the central cell
+            const double cp_L = vapor_sodium::cp(T_v_bulk[i - 1]);                  /// S. h. at constant pressure [J/(kg K)] of the left cell
+            const double cp_R = vapor_sodium::cp(T_v_bulk[i + 1]);                  /// S. h. at constant pressure [J/(kg K)] of the right cell
 
-            const double mu_P = vapor_sodium::mu(T_v_bulk[i]);                      ///< Dynamic viscosity [J/(kg K)] of the central cell
+            const double mu_P = vapor_sodium::mu(T_v_bulk[i]);                      /// Dynamic viscosity [J/(kg K)] of the central cell
 
-            const double rhoCp_dzdt = rho_old_v[i] * cp_P * dz / dt;                ///< Useful constant [W/(m^2 K)]
+            const double rhoCp_dzdt = rho_old_v[i] * cp_P * dz / dt;                /// Useful constant [W/(m^2 K)]
 
-            const double keff_P = k_cond_P + SST_model_turbulence_on_off * (mu_t[i] * cp_P / Pr_t);     ///< Effective t. c. [J/(kg K)] of the central cell
-            const double keff_L = k_cond_L + SST_model_turbulence_on_off * (mu_t[i - 1] * cp_L / Pr_t); ///< Effective t. c. [J/(kg K)] of the left cell
-            const double keff_R = k_cond_R + SST_model_turbulence_on_off * (mu_t[i + 1] * cp_R / Pr_t); ///< Effective t. c. [J/(kg K)] of the right cell
+            const double keff_P = k_cond_P + SST_model_turbulence_on_off * (mu_t[i] * cp_P / Pr_t);     /// Effective t. c. [J/(kg K)] of the central cell
+            const double keff_L = k_cond_L + SST_model_turbulence_on_off * (mu_t[i - 1] * cp_L / Pr_t); /// Effective t. c. [J/(kg K)] of the left cell
+            const double keff_R = k_cond_R + SST_model_turbulence_on_off * (mu_t[i + 1] * cp_R / Pr_t); /// Effective t. c. [J/(kg K)] of the right cell
 
-            const double D_l = 0.5 * (keff_P + keff_L) / dz;                        ///< Diffusion coefficient [W/(m^2 K)] of the left face (average)
-            const double D_r = 0.5 * (keff_P + keff_R) / dz;                        ///< Diffusion coefficient [W/(m^2 K)] of the right face (average)
+            const double D_l = 0.5 * (keff_P + keff_L) / dz;                        /// Diffusion coefficient [W/(m^2 K)] of the left face (average)
+            const double D_r = 0.5 * (keff_P + keff_R) / dz;                        /// Diffusion coefficient [W/(m^2 K)] of the right face (average)
 
             /// RC correction for the left face velocity
             const double rhie_chow_l = -(1.0 / bVU[i - 1] + 1.0 / bVU[i]) / (8 * dz) * (p_padded_v[i - 2] - 3 * p_padded_v[i - 1] + 3 * p_padded_v[i] - p_padded_v[i + 1]);
@@ -1940,29 +1938,29 @@ int main() {
             /// Right face velocity [m/s] (average + RC correction)
             const double u_r_face = 0.5 * (u_v[i] + u_v[i + 1]) + rhie_chow_on_off_v * rhie_chow_r;
 
-            const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;   ///< Density [kg/m3] of the left face (upwind)
-            const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;   ///< Density [kg/m3] of the right face (upwind)
+            const double rho_l = (u_l_face >= 0) ? rho_L : rho_P;   /// Density [kg/m3] of the left face (upwind)
+            const double rho_r = (u_r_face >= 0) ? rho_P : rho_R;   /// Density [kg/m3] of the right face (upwind)
 
             // Upwind specific heat
-            const double cp_l = (u_l_face >= 0) ? cp_L : cp_P;      ///< S. h. at constant pressure [J/(kg K)] of the left face (upwind)
-            const double cp_r = (u_r_face >= 0) ? cp_P : cp_R;      ///< S. h. at constant pressure [J/(kg K)] of the right face (upwind)
+            const double cp_l = (u_l_face >= 0) ? cp_L : cp_P;      /// S. h. at constant pressure [J/(kg K)] of the left face (upwind)
+            const double cp_r = (u_r_face >= 0) ? cp_P : cp_R;      /// S. h. at constant pressure [J/(kg K)] of the right face (upwind)
 
-            const double Fl = rho_l * u_l_face;                     ///< Mass flux [kg/(m2 s)] of the left face (upwind)       
-            const double Fr = rho_r * u_r_face;                     ///< Mass flux [kg/(m2 s)] of the left face (upwind)
+            const double Fl = rho_l * u_l_face;                     /// Mass flux [kg/(m2 s)] of the left face (upwind)       
+            const double Fr = rho_r * u_r_face;                     /// Mass flux [kg/(m2 s)] of the left face (upwind)
 
-            const double C_l = (Fl * cp_l);                         ///< Mass flux [W/(m^2 K)] of the left face (upwind)
-            const double C_r = (Fr * cp_r);                         ///< Mass flux [W/(m^2 K)] of the left face (upwind)
+            const double C_l = (Fl * cp_l);                         /// Mass flux [W/(m^2 K)] of the left face (upwind)
+            const double C_r = (Fr * cp_r);                         /// Mass flux [W/(m^2 K)] of the left face (upwind)
 
-            Q_v[i] = 2 * q_x_v_vapor[i] / r_inner + Q_mass_vapor[i];      ///< Vapor volumetric heat source [W/m^3] due to phase change and heat flux at the interface
+            Q_v[i] = 2 * q_x_v_vapor[i] / r_inner + Q_mass_vapor[i];      /// Vapor volumetric heat source [W/m^3] due to phase change and heat flux at the interface
 
             const double dpdz_up = (u_v[i] >= 0.0)
                 ? u_v[i] * (p_v[i] - p_v[i - 1]) / dz
                 : u_v[i] * (p_v[i + 1] - p_v[i]) / dz;
 
-            aVT[i] = -D_l - std::max(C_l, 0.0);                     ///< [W/(m2 K)]
-            cVT[i] = -D_r - std::max(-C_r, 0.0);                    ///< [W/(m2 K)]
+            aVT[i] = -D_l - std::max(C_l, 0.0);                     /// [W/(m2 K)]
+            cVT[i] = -D_r - std::max(-C_r, 0.0);                    /// [W/(m2 K)]
             bVT[i] = (std::max(C_r, 0.0) + std::max(-C_l, 0.0)) +   
-                        D_l + D_r + rhoCp_dzdt;                                     ///< [W/(m2 K)]
+                        D_l + D_r + rhoCp_dzdt;                                     /// [W/(m2 K)]
 
             const double pressure_work = (p_v[i] - p_old_v[i]) / dt + dpdz_up;
 
@@ -1971,7 +1969,7 @@ int main() {
             dVT[i] = rhoCp_dzdt * T_old_v[i] + 
                         pressure_work * dz +
                         viscous_dissipation * dz +
-                        Q_v[i] * dz;                                ///< [W/m2]
+                        Q_v[i] * dz;                                /// [W/m2]
         }
 
         /// Temperature BCs: zero gradient on the first node
