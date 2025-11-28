@@ -860,7 +860,7 @@ int main() {
     int new_case = 0;
     std::string name = "case_0";
     while (true) {
-        std::string name = "case_" + std::to_string(new_case);
+        name = "case_" + std::to_string(new_case);
         if (!std::filesystem::exists(name)) {
             std::filesystem::create_directory(name);
             break;
