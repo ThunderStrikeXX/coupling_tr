@@ -1155,33 +1155,42 @@ int main() {
 
                 std::vector<double> q_raw(N, 0.0);
 
+                //for (int i = 0; i < N; ++i) {
+
+                //    if (i <= evaporator_nodes) q_raw[i] = q_pp_evaporator;
+                //    else if (i >= N - condenser_nodes) {
+
+                //        double conv = h_conv * (T_o_w_iter[i] - T_env);
+                //        double irr = emissivity * sigma *
+                //            (std::pow(T_o_w_iter[i], 4) - std::pow(T_env, 4));
+
+                //        q_raw[i] = -(conv + irr);
+                //    }
+                //}
+
+                //// Light smoothing (3-point binomial filter)
+                //std::vector<double> q_smooth(N);
+
+                //for (int i = 0; i < N; ++i) {
+
+                //    double qm = q_raw[i];
+                //    double ql = (i > 0 ? q_raw[i - 1] : q_raw[i]);
+                //    double qr = (i < N - 1 ? q_raw[i + 1] : q_raw[i]);
+
+                //    // filtro di smoothing: [0.25, 0.5, 0.25]
+                //    q_smooth[i] = 0.25 * ql + 0.5 * qm + 0.25 * qr;
+                //}
+
+                //q_o_w = q_smooth;
+
                 for (int i = 0; i < N; ++i) {
 
-                    if (i <= evaporator_nodes) q_raw[i] = q_pp_evaporator;
-                    else if (i >= N - condenser_nodes) {
-
-                        double conv = h_conv * (T_o_w_iter[i] - T_env);
-                        double irr = emissivity * sigma *
-                            (std::pow(T_o_w_iter[i], 4) - std::pow(T_env, 4));
-
-                        q_raw[i] = -(conv + irr);
-                    }
+                    const double q_max = 2.0 * q_pp_evaporator;
+                    const double w = 0.5 - double(i * dz) / double(L);
+                    q_raw[i] = q_max * w;
                 }
 
-                // Light smoothing (3-point binomial filter)
-                std::vector<double> q_smooth(N);
-
-                for (int i = 0; i < N; ++i) {
-
-                    double qm = q_raw[i];
-                    double ql = (i > 0 ? q_raw[i - 1] : q_raw[i]);
-                    double qr = (i < N - 1 ? q_raw[i + 1] : q_raw[i]);
-
-                    // filtro di smoothing: [0.25, 0.5, 0.25]
-                    q_smooth[i] = 0.25 * ql + 0.5 * qm + 0.25 * qr;
-                }
-
-                q_o_w = q_smooth;
+                q_o_w = q_raw;
                                                                                        
                 q_w_x_wall[i] = k_int_w * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
                 q_w_x_wick[i] = k_int_x * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
