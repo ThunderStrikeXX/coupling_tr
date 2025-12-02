@@ -269,7 +269,7 @@ int main() {
 	double Omega = 1.0;                     /// Initialization of Omega parameter for evaporation/condensation model [-]
             
     // Geometric parameters
-    const int N = 100;                                                          /// Number of axial nodes [-]
+    const int N = 200;                                                          /// Number of axial nodes [-]
     const double L = 0.982; 			                                        /// Length of the heat pipe [m]
     const double dz = L / N;                                                    /// Axial discretization step [m]
     const double evaporator_length = 0.502;                                     /// Evaporator length [m]
