@@ -373,7 +373,7 @@ int main() {
 
     // Environmental boundary conditions
     const double h_conv = 10;               /// Convective heat transfer coefficient for external heat removal [W/m^2/K]
-    const double power = 1e3;               /// Power at the evaporator side [W]
+    const double power = 119;               /// Power at the evaporator side [W]
     const double T_env = 280.0;             /// External environmental temperature [K]
 
     // Evaporation and condensation parameters
@@ -383,26 +383,26 @@ int main() {
 	double Omega = 1.0;                     /// Initialization of Omega parameter for evaporation/condensation model [-]
             
     // Geometric parameters
-    const int N = 200;                                                          /// Number of axial nodes [-]
-    const double L = 0.982; 			                                        /// Length of the heat pipe [m]
-    const double dz = L / N;                                                    /// Axial discretization step [m]
-    const double evaporator_length = 0.502;                                     /// Evaporator length [m]
-    const double adiabatic_length = 0.188;                                      /// Adiabatic length [m]
-    const double condenser_length = 0.292;                                      /// Condenser length [m]
-    const double evaporator_nodes = std::floor(evaporator_length / dz);         /// Number of evaporator nodes
-    const double condenser_nodes = std::ceil(condenser_length / dz);            /// Number of condenser nodes
-    const double adiabatic_nodes = N - (evaporator_nodes + condenser_nodes);    /// Number of adiabatic nodes
-    const double r_o = 0.01335;                                                 /// Outer wall radius [m]
-    const double r_i = 0.0112;                                                  /// Wall-wick interface radius [m]
-    const double r_v = 0.01075;                                                 /// Vapor-wick interface radius [m]
+    const int N = 200;                                                                          /// Number of axial nodes [-]
+    const double L = 0.982; 			                                                        /// Length of the heat pipe [m]
+    const double dz = L / N;                                                                    /// Axial discretization step [m]
+    const double evaporator_start = 0.020;                                                      /// Evaporator begin [m]
+	const double evaporator_end = 0.073;                                                        /// Evaporator end [m]
+	const double condenser_length = 0.292;                                                      /// Condenser length [m]
+    const double evaporator_nodes = std::floor((evaporator_end - evaporator_start) / dz);       /// Number of evaporator nodes
+    const double condenser_nodes = std::ceil(condenser_length / dz);                            /// Number of condenser nodes
+    const double adiabatic_nodes = N - (evaporator_nodes + condenser_nodes);                    /// Number of adiabatic nodes
+    const double r_o = 0.01335;                                                                 /// Outer wall radius [m]
+    const double r_i = 0.0112;                                                                  /// Wall-wick interface radius [m]
+    const double r_v = 0.01075;                                                                 /// Vapor-wick interface radius [m]
 
     // Surfaces 
-    const double A_w_outer = 2 * M_PI * r_o * dz;                           /// Wall radial area (at r_o) [m^2]
-    const double A_w_cross = M_PI * (r_o * r_o - r_i * r_i);                /// Wall cross-sectional area [m^2]
-    const double A_x_interface = 2 * M_PI * r_i * dz;                       /// Wick radial area (at r_i) [m^2]
-    const double A_x_cross = M_PI * (r_i * r_i - r_v * r_v);                /// Wick cross-sectional area [m^2]
-    const double A_v_inner = 2 * M_PI * r_v * dz;                           /// Vapor radial area (at r_v) [m^2]
-    const double A_v_cross = M_PI * r_v * r_v;                              /// Vapor cross-sectional area [m^2]
+    const double A_w_outer = 2 * M_PI * r_o * dz;                   /// Wall radial area (at r_o) [m^2]
+    const double A_w_cross = M_PI * (r_o * r_o - r_i * r_i);        /// Wall cross-sectional area [m^2]
+    const double A_x_interface = 2 * M_PI * r_i * dz;               /// Wick radial area (at r_i) [m^2]
+    const double A_x_cross = M_PI * (r_i * r_i - r_v * r_v);        /// Wick cross-sectional area [m^2]
+    const double A_v_inner = 2 * M_PI * r_v * dz;                   /// Vapor radial area (at r_v) [m^2]
+    const double A_v_cross = M_PI * r_v * r_v;                      /// Vapor cross-sectional area [m^2]
 
     // Time-stepping parameters
     double dt_user = 1e-4;                  /// Initial time step [s] (then it is updated according to the limits)
@@ -436,11 +436,6 @@ int main() {
     // Output precision
     const int global_precision = 8;
 
-    // Node partition
-    const int N_e = static_cast<int>(std::floor(evaporator_length / dz));   /// Number of nodes of the evaporator region [-]
-    const int N_c = static_cast<int>(std::ceil(condenser_length / dz));     /// Number of nodes of the condenser region [-]
-    const int N_a = N - (N_e + N_c);                                        /// Number of nodes of the adiabadic region [-]
-
     /// Constant temperature for initialization
     const double T_init = 800.0;
 
@@ -452,11 +447,11 @@ int main() {
     std::vector<double> T_v_bulk(N, T_init);
 
     // Wick fields
-    std::vector<double> u_x(N, -0.0001);                                            /// Wick velocity field [m/s]
-    std::vector<double> p_x(N);               /// Wick pressure field [Pa]
-    std::vector<double> rho_x(N);                                             /// Vapor density field [Pa]
-    std::vector<double> p_storage_x(N + 2);      /// Wick padded pressure vector for R&C correction [Pa]
-    double* p_padded_x = &p_storage_x[1];                                           /// Poìnter to work on the wick pressure padded storage with the same indes
+    std::vector<double> u_x(N, -0.0001);            /// Wick velocity field [m/s]
+    std::vector<double> p_x(N);                     /// Wick pressure field [Pa]
+    std::vector<double> rho_x(N);                   /// Vapor density field [Pa]
+    std::vector<double> p_storage_x(N + 2);         /// Wick padded pressure vector for R&C correction [Pa]
+    double* p_padded_x = &p_storage_x[1];           /// Poìnter to work on the wick pressure padded storage with the same indes
 
     /// Initialization of the wick pressure
     for (int i = 0; i < N; ++i) p_x[i] = vapor_sodium::P_sat(T_x_v[i]);
@@ -465,15 +460,14 @@ int main() {
     for (int i = 0; i < N; ++i) rho_x[i] = liquid_sodium::rho(T_x_bulk[i]);
 
     // Vapor fields
-    std::vector<double> u_v(N, 0.1);                                                /// Vapor velocity field [m/s]
-    std::vector<double> p_v(N);                                                /// Vapor pressure field [Pa]
-    std::vector<double> rho_v(N);                                             /// Vapor density field [Pa]
-    std::vector<double> p_storage_v(N + 2);   /// Vapor padded pressure vector for R&C correction [Pa]
-    double* p_padded_v = &p_storage_v[1];                                           /// Poìnter to work on the storage with the same indes
+    std::vector<double> u_v(N, 0.1);                /// Vapor velocity field [m/s]
+    std::vector<double> p_v(N);                     /// Vapor pressure field [Pa]
+    std::vector<double> rho_v(N);                   /// Vapor density field [Pa]
+    std::vector<double> p_storage_v(N + 2);         /// Vapor padded pressure vector for R&C correction [Pa]
+    double* p_padded_v = &p_storage_v[1];           /// Poìnter to work on the storage with the same indes
 
     /// Initialization of the vapor pressure
     for (int i = 0; i < N; ++i) p_v[i] = vapor_sodium::P_sat(T_x_v[i]);
-
 
     // Vapor Equation of State update function. Updates density
     auto eos_update = [&](std::vector<double>& rho_, const std::vector<double>& p_, const std::vector<double>& T_) {
@@ -702,9 +696,6 @@ int main() {
     const double u_outlet_v = 0.0;                              /// Vapor outlet velocity [m/s]
     double p_outlet_v = vapor_sodium::P_sat(T_v_bulk[N - 1]);   /// Vapor outlet pressure [Pa]
 
-    /// Heat flux at evaporator from given power [W/m^2]
-    const double q_pp_evaporator = power / (2 * M_PI * evaporator_length * r_o);
-
     // Turbulence constants for sodium vapor (SST model)
     const double Pr_t = 0.01;                                   /// Prandtl turbulent number for sodium vapor [-]
     const double I = 0.05;                                      /// Turbulence intensity [-]
@@ -782,7 +773,7 @@ int main() {
 
             // =======================================================================
             //
-            //                   [3. SOLVE INTERFACES AND FLUXES]
+            //                   [0. SOLVE INTERFACES AND FLUXES]
             //
             // =======================================================================
 
@@ -888,44 +879,74 @@ int main() {
                 T_w_x[i] = ABC[i][0] + ABC[i][1] * r_i + ABC[i][2] * r_i * r_i; /// Temperature at the wall wick interface
                 T_x_v[i] = ABC[i][3] + ABC[i][4] * r_v + ABC[i][5] * r_v * r_v; /// Temperature at the wick vapor interface
 
-                std::vector<double> q_raw(N, 0.0);
+                // -----------------------------------------------------------
+                // Smooth axial heat-input/output distribution q_o_w[i] [W/m]
+                // -----------------------------------------------------------
 
-                //for (int i = 0; i < N; ++i) {
+                // Smoothing parameters
+                const double delta_h = 0.005;                      // Smoothing evaporator [m]
+                const double delta_c = 0.010;                      // Smoothing condenser [m]
 
-                //    if (i <= evaporator_nodes) q_raw[i] = q_pp_evaporator;
-                //    else if (i >= N - condenser_nodes) {
+                // Axial coordinates of center cells
+                std::vector<double> z(N);
+                for (int i = 0; i < N; ++i) z[i] = (i + 0.5) * dz;
 
-                //        double conv = h_conv * (T_o_w_iter[i] - T_env);
-                //        double irr = emissivity * sigma *
-                //            (std::pow(T_o_w_iter[i], 4) - std::pow(T_env, 4));
+				// Effective length of the evaporator
+                const double Lh = evaporator_end - evaporator_start;
+                const double Lh_eff = Lh + delta_h;
+                const double q0 = power / Lh_eff;                  // plateau heater [W/m]
 
-                //        q_raw[i] = -(conv + irr);
-                //    }
-                //}
+                // ---------------------------------------
+                // Evaporator (cosine smooth top–hat)
+                // ---------------------------------------
+                for (int i = 0; i < N; ++i) {
 
-                //// Light smoothing (3-point binomial filter)
-                //std::vector<double> q_smooth(N);
+                    const double zi = z[i];
 
-                //for (int i = 0; i < N; ++i) {
+                    // Left ramp
+                    if (zi >= (evaporator_start - delta_h) && zi < evaporator_start) {
+                        double x = (zi - (evaporator_start - delta_h)) / delta_h;    // [0,1]
+                        q_o_w[i] = 0.5 * q0 * (1.0 - std::cos(M_PI * x));
+                    }
 
-                //    double qm = q_raw[i];
-                //    double ql = (i > 0 ? q_raw[i - 1] : q_raw[i]);
-                //    double qr = (i < N - 1 ? q_raw[i + 1] : q_raw[i]);
+                    // Central plateau
+                    else if (zi >= evaporator_start && zi <= evaporator_end) {
+                        q_o_w[i] = q0;
+                    }
 
-                //    // filtro di smoothing: [0.25, 0.5, 0.25]
-                //    q_smooth[i] = 0.25 * ql + 0.5 * qm + 0.25 * qr;
-                //}
+                    // Right ramp
+                    else if (zi > evaporator_end && zi <= (evaporator_end + delta_h)) {
+                        double x = (zi - evaporator_end) / delta_h;                  // [0,1]
+                        q_o_w[i] = 0.5 * q0 * (1.0 + std::cos(M_PI * x));
+                    }
+                }
 
-                //q_o_w = q_smooth;
+                // ---------------------------------------
+				// Condenser (cosine smooth step)
+                // ---------------------------------------
+                const double condenser_start_z = L - condenser_length;
+                const double condenser_end_z = L;
 
                 for (int i = 0; i < N; ++i) {
 
-                    const double q_max = 2.0 * q_pp_evaporator;
-                    const double w = 0.5 - double(i * dz) / double(L);
-                    q_raw[i] = q_max * w;
-                }
+                    const double zi = z[i];
 
-                q_o_w = q_raw;
+					// Cooling with convection and radiation
+                    double conv = h_conv * (T_o_w_iter[i] - T_env);
+                    double irr = emissivity * sigma *
+                        (std::pow(T_o_w_iter[i], 4) - std::pow(T_env, 4));
+
+					double qc = -(conv + irr);   // Extracted power [W/m], negative sign
+
+                    // Smoothing only in the final region
+                    if (zi >= (condenser_end_z - delta_c)) {
+                        double x = (zi - (condenser_end_z - delta_c)) / delta_c;   // [0,1]
+                        double w = 0.5 * (1.0 - std::cos(M_PI * x));               // 0→1
+                        qc *= w;
+                    }
+
+                    q_o_w[i] += qc;
+                }
 
                 q_w_x_wall[i] = k_int_w * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
                 q_w_x_wick[i] = k_int_x * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
@@ -1427,7 +1448,7 @@ int main() {
 
             // =======================================================================
             //
-            //                           [4. SOLVE VAPOR]
+            //                           [3. SOLVE VAPOR]
             //
             // =======================================================================
 
@@ -2024,6 +2045,14 @@ int main() {
 
             #pragma endregion
 
+            // =======================================================================
+            //
+            //                              [4. PICARD]
+            //
+            // =======================================================================
+
+            #pragma region picard
+
             // Calculate Picard error
             double L1 = 0.0;
             for (int i = 0; i < N; ++i) {
@@ -2076,6 +2105,8 @@ int main() {
             T_x_bulk_iter = T_x_bulk;
             T_x_v_iter = T_x_v;
             T_v_bulk_iter = T_v_bulk;
+
+            #pragma endregion
             
         }
 
