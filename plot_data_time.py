@@ -30,6 +30,7 @@ for i, c in enumerate(cases):
 idx = int(input("Select case index: "))
 case = cases[idx]
 
+# -------------------- Files --------------------
 x_file = os.path.join(case, "mesh.txt")
 time_file = os.path.join(case, "time.txt")
 
@@ -48,7 +49,10 @@ targets = [
     "wall_wick_heat_flux.txt",
     "wick_vapor_heat_flux.txt",
     "wick_vapor_mass_source.txt",
-    "rho_vapor.txt"
+    "rho_liquid.txt",
+    "rho_vapor.txt",
+    "saturation_pressure.txt",
+    "sonic_velocity.txt"
 ]
 
 y_files = [os.path.join(case, p) for p in targets]
@@ -58,6 +62,7 @@ for f in [x_file, time_file] + y_files:
         print("Missing file:", f)
         sys.exit(1)
 
+# -------------------- Load data --------------------
 x = safe_loadtxt(x_file)
 time = safe_loadtxt(time_file)
 Y = [safe_loadtxt(f) for f in y_files]
@@ -68,15 +73,18 @@ names = [
     "Wall bulk temperature", "Outer wall temperature",
     "Wall-wick interface temperature", "Wick-vapor interface temperature",
     "Outer wall heat flux", "Wall-wick heat flux", "Wick-vapor heat flux",
-    "Mass volumetric source", "Vapor density"
+    "Mass volumetric source", "Liquid density", "Vapor density",
+    "Saturation pressure", "Sonic speed"
 ]
 
 units = [
     "[m/s]", "[K]", "[Pa]", "[m/s]", "[K]", "[Pa]",
     "[K]", "[K]", "[K]", "[K]",
-    "[W/m²]", "[W/m²]", "[W/m²]", "[kg/s m³]", "[kg/m³]"
+    "[W/m²]", "[W/m²]", "[W/m²]", "[kg/s m³]", "[kg/m³]", "[kg/m³]",
+    "[Pa]", "[m/s]"
 ]
 
+# -------------------- Utils --------------------
 def robust_ylim(y):
     vals = y.flatten() if y.ndim > 1 else y
     lo, hi = np.percentile(vals, [1, 99])
@@ -91,36 +99,45 @@ def pos_to_index(val):
 def index_to_pos(i):
     return x[i]
 
+# -------------------- Figure --------------------
 fig, ax = plt.subplots(figsize=(11, 6))
-plt.subplots_adjust(left=0.08, bottom=0.25, right=0.70)
+plt.subplots_adjust(left=0.08, bottom=0.25, right=0.60)
 line, = ax.plot([], [], lw=2)
+line2, = ax.plot([], [], lw=1, linestyle='--')
 ax.grid(True)
 ax.set_xlabel("Time [s]")
 
-ax_slider = plt.axes([0.15, 0.1, 0.55, 0.03])
+# Slider
+ax_slider = plt.axes([0.13, 0.10, 0.42, 0.03])
 slider = Slider(ax_slider, "Axial pos [m]", x.min(), x.max(), valinit=x[0])
 
+# -------------------- Buttons --------------------
 buttons = []
-n_vars = len(Y)
-n_cols = 2
-button_width = 0.12
-button_height = 0.08
-col_gap = 0.02
-row_gap = 0.10
-start_x = 0.73
-start_y = 0.86
+n_vars = len(names)
+n_cols = 3
+button_width = 0.11
+button_height = 0.09
+col_gap = 0.005
+
+panel_left = 0.62
+panel_right = 0.70
+panel_top = 0.95
+panel_bottom = 0.05
+
+n_rows = int(np.ceil(n_vars / n_cols))
+row_height = (panel_top - panel_bottom) / (n_rows + 2.0)
 
 for i, name in enumerate(names):
     col = i % n_cols
     row = i // n_cols
-    label = "\n".join(textwrap.wrap(name, 15))
-    x_pos = start_x + col * (button_width + col_gap)
-    y_pos = start_y - row * row_gap
+    x_pos = panel_left + col * (button_width + col_gap)
+    y_pos = panel_top - (row + 1) * row_height
     b_ax = plt.axes([x_pos, y_pos, button_width, button_height])
-    btn = Button(b_ax, label, hovercolor='0.975')
-    btn.label.set_fontsize(8)
+    btn = Button(b_ax, "\n".join(textwrap.wrap(name, 12)), hovercolor='0.975')
+    btn.label.set_fontsize(9)
     buttons.append(btn)
 
+# Control buttons
 ax_play = plt.axes([0.15, 0.02, 0.10, 0.05])
 btn_play = Button(ax_play, "Play", hovercolor='0.975')
 ax_pause = plt.axes([0.27, 0.02, 0.10, 0.05])
@@ -140,10 +157,21 @@ ax.set_xlim(time.min(), time.max())
 paused = [False]
 current_node = [0]
 
+# -------------------- Drawing --------------------
 def draw_node(i, update_slider=True):
     y = Y[current_idx]
     line.set_data(time, y[:, i])
+
+    # sovrapposizione sonic speed
+    if names[current_idx] == "Vapor velocity":
+        y_sonic = Y[names.index("Sonic speed")]
+        line2.set_data(time, y_sonic[:, i])
+        line2.set_visible(True)
+    else:
+        line2.set_visible(False)
+
     ax.set_ylim(*robust_ylim(y[:, i]))
+
     if update_slider:
         slider.disconnect(slider_cid)
         slider.set_val(index_to_pos(i))
@@ -168,6 +196,7 @@ def connect_slider():
 
 connect_slider()
 
+# -------------------- Variable change --------------------
 def change_variable(idx):
     global current_idx, ydata
     current_idx = idx
@@ -178,6 +207,7 @@ def change_variable(idx):
 for i, btn in enumerate(buttons):
     btn.on_clicked(lambda event, j=i: change_variable(j))
 
+# -------------------- Controls --------------------
 def pause(event):
     paused[0] = True
 
@@ -195,6 +225,7 @@ btn_play.on_clicked(play)
 btn_pause.on_clicked(pause)
 btn_reset.on_clicked(reset)
 
+# -------------------- Animation --------------------
 skip = max(1, n_nodes // 200)
 ani = FuncAnimation(
     fig,

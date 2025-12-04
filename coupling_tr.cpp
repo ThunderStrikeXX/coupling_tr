@@ -418,17 +418,27 @@ int main() {
 
     // Wick fields
     std::vector<double> u_x(N, -0.0001);                                            /// Wick velocity field [m/s]
-    std::vector<double> p_x(N, vapor_sodium::P_sat(T_v_bulk[N - 1]));               /// Wick pressure field [Pa]
-    std::vector<double> rho_x(N, 700);                                             /// Vapor density field [Pa]
-    std::vector<double> p_storage_x(N + 2, vapor_sodium::P_sat(T_x_v[N - 1]));      /// Wick padded pressure vector for R&C correction [Pa]
+    std::vector<double> p_x(N);               /// Wick pressure field [Pa]
+    std::vector<double> rho_x(N);                                             /// Vapor density field [Pa]
+    std::vector<double> p_storage_x(N + 2);      /// Wick padded pressure vector for R&C correction [Pa]
     double* p_padded_x = &p_storage_x[1];                                           /// Poìnter to work on the wick pressure padded storage with the same indes
+
+    /// Initialization of the wick pressure
+    for (int i = 0; i < N; ++i) p_x[i] = vapor_sodium::P_sat(T_x_v[i]);
+
+	/// Initialization of the wick density
+    for (int i = 0; i < N; ++i) rho_x[i] = liquid_sodium::rho(T_x_bulk[i]);
 
     // Vapor fields
     std::vector<double> u_v(N, 0.1);                                                /// Vapor velocity field [m/s]
-    std::vector<double> p_v(N, 0.0);                                                /// Vapor pressure field [Pa]
-    std::vector<double> rho_v(N, 8e-3);                                             /// Vapor density field [Pa]
-    std::vector<double> p_storage_v(N + 2, vapor_sodium::P_sat(T_v_bulk[N - 1]));   /// Vapor padded pressure vector for R&C correction [Pa]
+    std::vector<double> p_v(N);                                                /// Vapor pressure field [Pa]
+    std::vector<double> rho_v(N);                                             /// Vapor density field [Pa]
+    std::vector<double> p_storage_v(N + 2);   /// Vapor padded pressure vector for R&C correction [Pa]
     double* p_padded_v = &p_storage_v[1];                                           /// Poìnter to work on the storage with the same indes
+
+    /// Initialization of the vapor pressure
+    for (int i = 0; i < N; ++i) p_v[i] = vapor_sodium::P_sat(T_x_v[i]);
+
 
     // Vapor Equation of State update function. Updates density
     auto eos_update = [&](std::vector<double>& rho_, const std::vector<double>& p_, const std::vector<double>& T_) {
@@ -436,9 +446,6 @@ int main() {
         for (int i = 0; i < N; i++) { rho_[i] = std::max(1e-6, p_[i] / (Rv * T_[i])); }
 
     }; eos_update(rho_v, p_v, T_v_bulk);
-
-    /// Initialization of the vapor pressure
-    for (int i = 0; i < N; ++i) p_v[i] = vapor_sodium::P_sat(T_x_v[i]);
 
     // Heat fluxes at the interfaces [W/m^2]
     std::vector<double> q_o_w(N, 0.0);           /// Heat flux [W/m^2] across outer wall in wall region (positive if directed to wall)
@@ -1192,6 +1199,8 @@ int main() {
             dXT[N - 1] = 0.0;
 
             T_x_bulk = solveTridiagonal(aXT, bXT, cXT, dXT);
+
+			for (int i = 0; i < N; ++i) rho_x[i] = liquid_sodium::rho(T_x_bulk[i]);
 
             #pragma endregion
 

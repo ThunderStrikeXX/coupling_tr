@@ -49,8 +49,12 @@ targets = [
     "wall_wick_heat_flux.txt",
     "wick_vapor_heat_flux.txt",
     "wick_vapor_mass_source.txt",
-    "rho_vapor.txt"
+    "rho_liquid.txt",
+    "rho_vapor.txt",
+    "saturation_pressure.txt",
+    "sonic_velocity.txt"
 ]
+
 
 y_files = [os.path.join(case, p) for p in targets]
 
@@ -70,14 +74,17 @@ names = [
     "Wall bulk temperature", "Outer wall temperature",
     "Wall-wick interface temperature", "Wick-vapor interface temperature",
     "Outer wall heat flux", "Wall-wick heat flux", "Wick-vapor heat flux",
-    "Mass volumetric source", "Vapor density"
+    "Mass volumetric source", "Liquid density", "Vapor density",
+    "Saturation pressure", "Sonic speed"
 ]
 
 units = [
     "[m/s]", "[K]", "[Pa]", "[m/s]", "[K]", "[Pa]",
     "[K]", "[K]", "[K]", "[K]",
-    "[W/m²]", "[W/m²]", "[W/m²]", "[kg/s m³]", "[kg/m³]"
+    "[W/m²]", "[W/m²]", "[W/m²]", "[kg/s m³]", "[kg/m³]", "[kg/m³]",
+    "[Pa]", "[m/s]"
 ]
+
 
 # -------------------- Utils --------------------
 def robust_ylim(y):
@@ -96,35 +103,47 @@ def index_to_time(i):
 
 # -------------------- Figure --------------------
 fig, ax = plt.subplots(figsize=(11, 6))
-plt.subplots_adjust(left=0.08, bottom=0.25, right=0.70)
+plt.subplots_adjust(left=0.08, bottom=0.25, right=0.60)
 line, = ax.plot([], [], lw=2)
+line2, = ax.plot([], [], lw=1, linestyle='--')
 ax.grid(True)
 ax.set_xlabel("Axial length [m]")
 
 # Slider con valori temporali reali
-ax_slider = plt.axes([0.15, 0.1, 0.55, 0.03])
+ax_slider = plt.axes([0.08, 0.10, 0.50, 0.03])
 slider = Slider(ax_slider, "Time [s]", time.min(), time.max(), valinit=time[0])
 
 # -------------------- Buttons list --------------------
 buttons = []
-n_vars = len(Y)
-n_cols = 2
-button_width = 0.12
-button_height = 0.08
-col_gap = 0.02
-row_gap = 0.10
-start_x = 0.73
-start_y = 0.86
+n_vars = len(names)
+n_cols = 3                # numero colonne
+button_width = 0.11
+button_height = 0.09
+col_gap = 0.005   # pulsanti più vicini orizzontalmente
+
+# area dedicata ai pulsanti
+panel_left = 0.62
+panel_right = 0.7
+panel_top = 0.95
+panel_bottom = 0.05
+
+# calcolo righe totali necessarie
+n_rows = int(np.ceil(n_vars / n_cols))
+
+# altezza effettiva per ogni riga
+row_height = (panel_top - panel_bottom) / (n_rows + 2.0)
 
 for i, name in enumerate(names):
     col = i % n_cols
     row = i // n_cols
-    label = "\n".join(textwrap.wrap(name, 15))
-    x_pos = start_x + col * (button_width + col_gap)
-    y_pos = start_y - row * row_gap
+
+    x_pos = panel_left + col * (button_width + col_gap)
+    # inverti asse y: riga 0 in alto
+    y_pos = panel_top - (row + 1) * row_height
+
     b_ax = plt.axes([x_pos, y_pos, button_width, button_height])
-    btn = Button(b_ax, label, hovercolor='0.975')
-    btn.label.set_fontsize(8)
+    btn = Button(b_ax, "\n".join(textwrap.wrap(name, 12)), hovercolor='0.975')
+    btn.label.set_fontsize(9)
     buttons.append(btn)
 
 # Control buttons
@@ -149,10 +168,23 @@ current_frame = [0]
 # -------------------- Drawing --------------------
 def draw_frame(i, update_slider=True):
     y = Y[current_idx]
+
+    # plot principale
     if y.ndim > 1:
         line.set_data(x, y[i, :])
     else:
         line.set_data(x, y)
+
+    # sovrapposizione sonic velocity
+    if names[current_idx] == "Vapor velocity":
+        y_sonic = Y[names.index("Sonic speed")]
+        if y_sonic.ndim > 1:
+            line2.set_data(x, y_sonic[i, :])
+        else:
+            line2.set_data(x, y_sonic)
+        line2.set_visible(True)
+    else:
+        line2.set_visible(False)
 
     if update_slider:
         slider.disconnect(slider_cid)
@@ -184,10 +216,13 @@ def change_variable(idx):
     global ydata
     current_idx = idx
     ydata = Y[idx]
+
     ax.set_title(f"{names[idx]} {units[idx]}")
     ax.set_ylim(*robust_ylim(ydata))
+
     current_frame[0] = 0
     draw_frame(0)
+
 
 for i, btn in enumerate(buttons):
     btn.on_clicked(lambda event, j=i: change_variable(j))
