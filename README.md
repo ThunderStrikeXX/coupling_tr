@@ -1,6 +1,6 @@
-# Sodium Heat Pipe 1D Solver
+# Heat Pipe Coupled Multyphysics solver
 
-This repository contains a 1D finite-volume solver for coupled **wall–wick–vapor** regions of a sodium heat pipe.  
+This repository contains a 1D finite-volume solver for coupled **wallâ€“wickâ€“vapor** regions of a sodium heat pipe.  
 The code is implemented in **C++17**, following the structure of **THROHPUT**, **HPTAM** and **Sockeye** frameworks.
 
 ---
@@ -22,13 +22,11 @@ The code is implemented in **C++17**, following the structure of **THROHPUT**, *
 
 ```text
 
-+-- coupling.cpp
++-- HPCM.cpp
 +-- results/
-¦   +-- (data outputs)
+Â¦   +-- (data outputs)
 +-- videos/
-¦   +-- (video outputs)
-+-- make_videos.vbs
-+-- plot_data.vbs
+Â¦   +-- (video outputs)
 +-- README.md
 
 ````
@@ -51,7 +49,7 @@ g++ -std=c++17 -O3 coupling.cpp -Iinclude -o coupling
 Run the solver:
 
 ```bash
-./coupling
+./HPCM
 ```
 
 Optional plotting (Python 3.8+):
