@@ -320,10 +320,10 @@ double new_dt_v(double dz, double dt_old,
     for (int i = 0; i < N; ++i) {
 
         // Minimum time step due to mass source limit
-        double dt_mass = CSV_mass * vapor_sodium::rho(T[i]) / (std::abs(Sm[i]) + epsS);
+        double dt_mass = CSV_mass * rho[i] / (std::abs(Sm[i]) + epsS);
 
         /// Minimum time step due to heat source limit
-        double dt_flux = CSV_flux * vapor_sodium::rho(T[i]) * vapor_sodium::cp(T[i]) / (std::abs(Qf[i]) + epsT);
+        double dt_flux = CSV_flux * rho[i] * vapor_sodium::cp(T[i]) / (std::abs(Qf[i]) + epsT);
 
         // Minimum time step due to compressibility limit
         double dt_p = 1e99;
@@ -383,7 +383,7 @@ int main() {
 	double Omega = 1.0;                     /// Initialization of Omega parameter for evaporation/condensation model [-]
             
     // Geometric parameters
-    const int N = 200;                                                                          /// Number of axial nodes [-]
+    const int N = 100;                                                                          /// Number of axial nodes [-]
     const double L = 0.982; 			                                                        /// Length of the heat pipe [m]
     const double dz = L / N;                                                                    /// Axial discretization step [m]
     const double evaporator_start = 0.020;                                                      /// Evaporator begin [m]
@@ -879,96 +879,6 @@ int main() {
                 T_w_x[i] = ABC[i][0] + ABC[i][1] * r_i + ABC[i][2] * r_i * r_i; /// Temperature at the wall wick interface
                 T_x_v[i] = ABC[i][3] + ABC[i][4] * r_v + ABC[i][5] * r_v * r_v; /// Temperature at the wick vapor interface
 
-                std::vector<double> q_raw(N, 0.0);
-
-                // -----------------------------------------------------------
-                // Smooth axial heat-input/output distribution q_o_w[i] [W/m]
-                // -----------------------------------------------------------
-
-                // Smoothing parameters
-                const double delta_h = 0.01;                      // Smoothing evaporator [m]
-                const double delta_c = 0.05;                      // Smoothing condenser [m]
-
-                // Axial coordinates of center cells
-                std::vector<double> z(N);
-                for (int i = 0; i < N; ++i) z[i] = (i + 0.5) * dz;
-
-				// Effective length of the evaporator
-                const double Lh = evaporator_end - evaporator_start;
-                const double Lh_eff = Lh + delta_h;
-                const double q0 = power / Lh_eff;                  // plateau heater [W/m]
-
-                // ---------------------------------------
-                // Evaporator (cosine smooth top–hat)
-                // ---------------------------------------
-                for (int i = 0; i < N; ++i) {
-
-                    const double zi = z[i];
-
-                    // Left ramp
-                    if (zi >= (evaporator_start - delta_h) && zi < evaporator_start) {
-                        double x = (zi - (evaporator_start - delta_h)) / delta_h;    // [0,1]
-                        q_raw[i] = 0.5 * q0 * (1.0 - std::cos(M_PI * x));
-                    }
-
-                    // Central plateau
-                    else if (zi >= evaporator_start && zi <= evaporator_end) {
-                        q_raw[i] = q0;
-                    }
-
-                    // Right ramp
-                    else if (zi > evaporator_end && zi <= (evaporator_end + delta_h)) {
-                        double x = (zi - evaporator_end) / delta_h;                  // [0,1]
-                        q_raw[i] = 0.5 * q0 * (1.0 + std::cos(M_PI * x));
-                    }
-                }
-
-                // ---------------------------------------
-				// Condenser (cosine smooth step)
-                // ---------------------------------------
-                const double condenser_start_z = L - condenser_length;
-                const double condenser_end_z = L;
-
-                for (int i = 0; i < N; ++i) {
-
-                    const double zi = z[i];
-
-                    // Cooling with convection and radiation
-                    double conv = h_conv * (T_o_w_iter[i] - T_env);
-                    double irr = emissivity * sigma *
-                        (std::pow(T_o_w_iter[i], 4) - std::pow(T_env, 4));
-
-                    double qc = -(conv + irr);   // Extracted power [W/m]
-
-                    // ----------------------------------------------------
-                    // Smoothing at the *beginning* of the condenser
-                    // ----------------------------------------------------
-                    if (zi >= condenser_start_z && zi < condenser_start_z + delta_c) {
-
-                        double x = (zi - condenser_start_z) / delta_c;  // 0→1
-                        double w = 0.5 * (1.0 - std::cos(M_PI * x));    // 0→1
-                        qc *= w;                                        // ramp up into condenser
-                    }
-
-                    // ----------------------------------------------------
-                    // Middle and end of condenser → full qc
-                    // ----------------------------------------------------
-                    else if (zi >= condenser_start_z && zi <= condenser_end_z) {
-                        // qc remains unchanged
-                    }
-
-                    // ----------------------------------------------------
-                    // Outside condenser → no cooling
-                    // ----------------------------------------------------
-                    else {
-                        qc = 0.0;
-                    }
-
-                    q_raw[i] += qc;
-                }
-
-                q_o_w = q_raw;
-
                 q_w_x_wall[i] = k_int_w * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
                 q_w_x_wick[i] = k_int_x * (ABC[i][1] + 2.0 * ABC[i][2] * r_i);  /// Heat flux across wall-wick interface (positive if to wick)
                 q_x_v_wick[i] = k_x_v * (ABC[i][4] + 2.0 * ABC[i][5] * r_v);    /// Heat flux across wick-vapor interface (positive if to vapor)
@@ -976,6 +886,81 @@ int main() {
 
                 Q_mass_vapor[i] = +Gamma_xv_vapor[i] * h_xv_v; /// Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the vapor)
                 Q_mass_wick[i] = -Gamma_xv_wick[i] * h_vx_x;   /// Volumetric heat source [W/m3] due to evaporation/condensation (to be summed to the wick)
+            }
+
+            ///// Outer power
+            //static std::vector<double> z;
+            //static bool z_init = false;
+            //if (!z_init) {
+            //    z.resize(N);
+            //    for (int j = 0; j < N; ++j) z[j] = (j + 0.5) * dz;
+            //    z_init = true;
+            //}
+
+            //std::vector<double> q_raw(N, 0.0);
+
+            //// --- evaporatore: top-hat smussato con q0 [W/m^2]
+            //const double Lh = evaporator_end - evaporator_start;
+            //const double delta_h = 0.01;
+            //const double Lh_eff = Lh + delta_h;
+            //const double q0 = power / (2.0 * M_PI * r_o * Lh_eff); // [W/m^2]
+
+            //for (int j = 0; j < N; ++j) {
+            //    const double zj = z[j];
+
+            //    if (zj >= (evaporator_start - delta_h) && zj < evaporator_start) {
+            //        double x = (zj - (evaporator_start - delta_h)) / delta_h;
+            //        q_raw[j] = 0.5 * q0 * (1.0 - std::cos(M_PI * x));
+            //    }
+            //    else if (zj >= evaporator_start && zj <= evaporator_end) {
+            //        q_raw[j] = q0;
+            //    }
+            //    else if (zj > evaporator_end && zj <= (evaporator_end + delta_h)) {
+            //        double x = (zj - evaporator_end) / delta_h;
+            //        q_raw[j] = 0.5 * q0 * (1.0 + std::cos(M_PI * x));
+            //    }
+            //}
+
+            //// --- condensatore: raffreddamento convettivo+radiativo smussato all’inizio
+            //const double delta_c = 0.05;
+            //const double condenser_start = L - condenser_length;
+            //const double condenser_end = L;
+
+            //for (int j = 0; j < N; ++j) {
+
+            //    const double zj = z[j];
+
+            //    double conv = h_conv * (T_o_w_iter[j] - T_env);     // [W/m^2]
+            //    double irr = emissivity * sigma *
+            //        (std::pow(T_o_w_iter[j], 4) - std::pow(T_env, 4)); // [W/m^2]
+
+            //    double qc = -(conv + irr);  // [W/m^2], negativo = estrazione
+
+            //    if (zj >= condenser_start && zj < condenser_start + delta_c) {
+            //        double x = (zj - condenser_start) / delta_c;
+            //        double w = 0.5 * (1.0 - std::cos(M_PI * x));    // 0→1
+            //        qc *= w;
+            //    }
+            //    else if (zj < condenser_start || zj > condenser_end) {
+            //        qc = 0.0;
+            //    }
+
+            //    q_raw[j] += qc;
+            //}
+
+            //q_o_w = q_raw;
+
+            const double q0 = 10000.0;
+            const double qL = -10000.0;
+
+            const double m = (qL - q0) / L;
+
+            static std::vector<double> z(N);
+            for (int j = 0; j < N; ++j) z[j] = (j + 0.5) * dz;
+
+            for (int i = 0; i < N; ++i) {
+                double zi = z[i];
+                q_o_w[i] = q0 + m * zi;
             }
 
             /// Coupling hypotheses: temperature is transferred to the pressure of the sodium vapor

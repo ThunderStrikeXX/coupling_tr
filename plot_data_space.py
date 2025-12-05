@@ -184,7 +184,7 @@ buttons = []
 n_vars = len(names)
 n_cols = 3                # numero colonne
 button_width = 0.11
-button_height = 0.09
+button_height = 0.07
 col_gap = 0.005   # pulsanti più vicini orizzontalmente
 
 # area dedicata ai pulsanti

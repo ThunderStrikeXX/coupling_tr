@@ -94,19 +94,6 @@ namespace vapor_sodium {
     }
 
     /**
-    * @brief Density of saturated vapor [kg/m^3] as a function of temperature T
-    *   Clapeyron + phase equilibrium
-    */
-    inline double rho(double T) {
-
-        const double hv = vapor_sodium::h(T) - liquid_sodium::h(T);     // [J/kg]
-        const double dPdT = dP_sat_dT(T);                             // [Pa/K]
-        const double rhol = liquid_sodium::rho(T);                      // [kg/m^3]
-        const double denom = hv / (T * dPdT) + 1.0 / rhol;
-        return 1.0 / denom;                                             // [kg/m^3]
-    }
-
-    /**
     * @brief Specific heat at constant pressure from table interpolation [J/(kg*K)] as a function of temperature T
     *   Fink & Leibowitz
     */
