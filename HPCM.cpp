@@ -432,7 +432,7 @@ int main() {
     const int global_precision = 8;
 
     /// Constant temperature for initialization
-    const double T_init = 800.0;
+    const double T_init = 600.0;
 
     std::vector<double> T_o_w(N, T_init);
     std::vector<double> T_w_bulk(N, T_init);

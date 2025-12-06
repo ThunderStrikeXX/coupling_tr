@@ -230,7 +230,7 @@ namespace vapor_sodium {
     */
     inline double Nu(double Re, double Pr) {
 
-        if (Re <= 0.0 || Pr <= 0.0)
+        if (Re < 0.0 || Pr < 0.0)
             throw std::invalid_argument("Error: Re or Pr < 0");
 
         const double Nu_lam = 4.36;
